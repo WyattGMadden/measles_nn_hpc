@@ -1,10 +1,10 @@
 # Neural networks for endemic measles dynamics: comparative analysis and integration with mechanistic models
 
-This repo contains all code used to prodocue results referenced in paper. 
+This repo contains code to reproduce all results referenced in paper. 
 
-Run makefile to reproduce all figures and tables. 
+Run makefile to fit models and produce all figures and tables. 
 
-Figures and tables will be created in 'output/figures' and 'output/tables' respectively. 
+Figures and tables will be created in 'output/figures/' and 'output/tables/' directories respectively. 
 
 
 dependencies: 

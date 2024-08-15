@@ -6,46 +6,46 @@ all: createfig1 createfig2 createfig3 createfig4 createfig5 clean
 
 # Create Fig 1 (nn architecture plot)
 createfig1:
-	mkdir -p output/figures/
-	python code/python/basic_nn/plotting/nn_architecture_plots.py
+	mkdir -p output/figures/basic_nn
+	cd code/python/basic_nn/plotting && python nn_architecture_plots.py
 
 # Create Fig 2 (SFFN vs TSIR)
 createfig2:
 	#get birth data
 	mkdir -p data/births
-	Rscript code/r/get_data/get_birth_data.R
+	cd code/r/get_data && Rscript get_birth_data.R
 	#fit tsir
 	mkdir -p output/data/tsir/uk/raw
-	Rscript code/r/tsir/tsir_uk_run.R
-	mkdir -p output/data/tsir/uk/processe
-	Rscript code/r/tsir/tsir_uk_process.R
+	cd code/r/tsir && Rscript tsir_uk_run.R
+	mkdir -p output/data/tsir/uk/processed
+	cd code/r/tsir && Rscript tsir_uk_process.R
 	mkdir -p output/data/tsir_susceptibles
-	Rscript code/r/tsir/tsir_susceptibles_gen.R
+	cd code/r/tsir && Rscript tsir_susceptibles_gen.R
 	#fit neural nets
 	mkdir -p output/models/basic_nn_yearcutoff
-	./code/python/basic_nn/full_basic_yearcutoff.sh
+	cd code/python/basic_nn && ./full_basic_yearcutoff.sh
 	mkdir -p output/data/basic_nn_yearcutoff
-	Rscript code/r/basic_nn/yearcutoff_basic_nn_process.R
+	cd code/r/basic_nn && Rscript yearcutoff_basic_nn_process.R
 	mkdir -p output/data/basic_nn
-	Rscript cases_process.R
+	cd code/r/basic_nn && Rscript cases_process.R
 	#make plots
-	Rscript code/r/basic_nn/yearcutoff_compare_plots.R
+	cd code/r/basic_nn && Rscript yearcutoff_compare_plots.R
 
 # Create Fig 3 (SHAP plot)
 createfig3:
 	mkdir -p output/models/basic_nn_yearcutoff
-	./code/python/basic_nn/explain/data_process_explain.sh
+	cd code/python/basic_nn/explain && ./data_process_explain.sh
 	mkdir -p output/data/basic_nn_yearcutoff/explain
-	./code/python/basic_nn/explain/basic_nn_explain.sh
+	cd code/python/basic_nn/explain && ./basic_nn_explain.sh
 
 # Create Fig 4 (PINN plot) and Table 1 (PINN table)
 createfig4:
 	mkdir -p output/data/train_test_k
-	./code/python/data_processing/prevac_measles_data_loader.sh
+	cd code/python/data_processing && prevac_measles_data_loader.sh
 	mkdir -p output/models/pinn_experiments/final_london_pinn_yearcutoff
-	./code/python/pinn_experiments/final_london_pinn_yearcutoff/run.sh
+	cd code/python/pinn_experiments/final_london_pinn_yearcutoff && ./run.sh
 	mkdir -p output/tables
-	Rscript code/r/pinn_experiments/pinn_london_yearcutoff_plots_tables.R
+	cd code/r/pinn_experiments && Rscript pinn_london_yearcutoff_plots_tables.R
 
 
 

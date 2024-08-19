@@ -1,17 +1,13 @@
-import argparse
+
 import numpy as np
 import pandas as pd
 import torch
 np.random.seed(2)
 
-def get_train_test(dat, wrt, test_size):
-    #split train/test
-    dat_train = dat[dat[wrt] <= dat[wrt].quantile(1 - test_size)]
-    dat_test = dat[dat[wrt] > dat[wrt].quantile(1 - test_size)]
-    return dat_train, dat_test
 
 
-def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, write_to_file = False, top_12_cities = False, verbose = False, include_nbc_cases = False):
+
+def create_measles_data(k, t_lag, birth_data_loc, susc_data_loc, write_to_file = False, top_12_cities = False, verbose = False, current_births = False):
 
     cases = pd.read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/inferred_cases_urban.csv").rename(columns={"Unnamed: 0": "time"})
 
@@ -39,15 +35,31 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
                          id_vars = 'time',
                          var_name = 'city',
                          value_name = 'cases')
+    cases_long['cases'] = np.log(cases_long['cases'] + 1)
+
     cases_groups = cases_long.groupby(['city'])
     cases_mean, cases_std = cases_groups.transform("mean"), cases_groups.transform("std")
-    cases_long['cases_trans'] = (cases_long['cases'] - cases_mean['cases']) / cases_std['cases']
+    cases_long['cases'] = (cases_long['cases'] - cases_mean['cases']) / cases_std['cases']
 
+    cases_transform_output = cases_long[['time', 'city']].copy()
+    cases_transform_output['cases_mean'] = cases_mean['cases']
+    cases_transform_output['cases_std'] = cases_std['cases']
+
+    # Create a list to hold the temporary DataFrames
+    temp_dfs = []
+
+    # Iterate and create lagged DataFrames
     for i in range(k, t_lag + 1):
-        cases_long["cases_lag_" + str(i)] = cases_long.groupby(["city"])['cases_trans'].shift(i)
+        lag_df = cases_long.groupby('city')['cases'].shift(i)
+        lag_df.name = "cases_lag_" + str(i)
+        temp_dfs.append(lag_df)
 
-    cases_long.drop(columns = 'cases_trans', inplace = True)
+    # Concatenate all the lagged DataFrames column-wise
+    lagged_data = pd.concat(temp_dfs, axis=1)
 
+    cases_long = cases_long.join(lagged_data)
+
+    
     #population
     pop_long = pd.melt(population, 
                        id_vars = 'time',
@@ -77,13 +89,25 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
                                      susc_df['susc_trans'])
 
 
-    for i in range(k, t_lag + 1):
-        susc_df["susc_lag_" + str(i)] = susc_df.groupby(["city"])["susc_trans"].shift(i)
+    # Create a list to hold the temporary DataFrames
+    temp_dfs = []
 
-    susc_df.drop(columns = 'susc_trans', inplace = True)
+    # Iterate and create lagged DataFrames
+    for i in range(k, t_lag + 1):
+        lag_df = susc_df.groupby('city')['susc_trans'].shift(i)
+        lag_df.name = "susc_lag_" + str(i)
+        temp_dfs.append(lag_df)
+
+    # Concatenate all the lagged DataFrames column-wise
+    lagged_data = pd.concat(temp_dfs, axis=1)
+
+    susc_df = susc_df.join(lagged_data)
+
     cases_long = cases_long.merge(susc_df,
                                   how = 'left', 
                                   on = ['time', 'city'])
+
+
 
 
     #births
@@ -108,6 +132,9 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
     #most recent birth of same season that doesn't cause data leakage
     k_temp = ((k + 25) // 26) * 26
     cases_long["births_lag_" + str(k_temp)] = cases_long.groupby(["city"])["births_std"].shift(k_temp)
+
+    if current_births:
+        cases_long["births_lag_0"] = cases_long["births_std"]
     
     cases_long.drop(columns = 'births_std', inplace = True)
 
@@ -167,8 +194,7 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
     nearest_big_city_distances = []
     for i in range(coord_dist.shape[0]):
         distances = coord_dist[i][city_locs]
-        #get index of nbc that is minimum distance from city (but not distance of zero, ie the same city)
-        min_distance_index = np.where(distances == np.min(distances[distances > 0]))[0][0]
+        min_distance_index = np.where(distances == np.min(distances))[0][0]
         nearest_big_city_distances.append(distances[min_distance_index])
         nearest_big_city_locs.append(city_locs[min_distance_index])
 
@@ -187,30 +213,20 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
     cases_long['nearest_big_city'] = nearest_big_city
 
     #join on distances to nearest big city
-    cases_long['nearest_big_city_distances_unscaled'] = nearest_big_city_distances 
     cases_long['nearest_big_city_distances'] = (nearest_big_city_distances - np.mean(nearest_big_city_distances)) / np.std(nearest_big_city_distances)
 
     lag_vec = ["cases_lag_" + str(i) for i in range(k, t_lag + 1)]
-    if include_nbc_cases:
-        to_join_columns = np.concatenate((['time', 'city', 'cases'], lag_vec))
-    else:
-        to_join_columns = np.concatenate((['time', 'city'], lag_vec))
+    to_join_columns = np.concatenate((['time', 'city'], lag_vec))
 
     cases_long_to_join = cases_long[to_join_columns].copy()
     cases_long_to_join.columns = (x.replace('cases_lag_', 'cases_nbc_lag_') for x in cases_long_to_join.columns)
-
-    #rename cases and nbc_cases
-    if include_nbc_cases:
-        cases_long_to_join.rename(columns = {'cases':'nbc_cases'}, inplace = True)
-        cases_long_to_join.rename(columns = {'city':'nearest_big_city'}, inplace = True)
-    else:
-        cases_long_to_join.rename(columns = {'city':'nearest_big_city'}, inplace = True)
-        cases_long = cases_long.drop('nearest_big_city', axis = 1)
+    cases_long_to_join.rename(columns = {'city':'nearest_big_city'}, inplace = True)
 
 
     cases_long = cases_long.merge(cases_long_to_join, 
                                   how = 'left', 
                                   on = ['time', 'nearest_big_city'])
+    cases_long = cases_long.drop('nearest_big_city', axis = 1)
 
 
 
@@ -280,54 +296,56 @@ def create_measles_data(k, t_lag, test_size, birth_data_loc, susc_data_loc, writ
     cases_long = cases_long[cases_long.time < 65]
 
     #drop rows with missing values due to lags
-    drop_times = cases.time[0:(k + t_lag)]
+    #drop_times = cases.time[0:(k + t_lag)]
+    drop_times = cases.time[0:t_lag]
     cases_long = cases_long[~cases_long['time'].isin(drop_times)]
 
 
-    cases_long_train, cases_long_test = get_train_test(dat = cases_long, wrt = 'time', test_size = test_size)
 
     if write_to_file:
-        #cases_long.to_parquet("../../../output/data/grav_pinn_data/k" + str(k) + ".gzip", compression = "gzip")
-        cases_long_train.to_parquet("../../../output/data/train_test_k/" + "k" + str(k) + "_train.gzip", compression = "gzip")
-        cases_long_test.to_parquet("../../../output/data/train_test_k/" + "k" + str(k) + "_test.gzip", compression = "gzip")
+        cases_long.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + ".gzip", compression = "gzip")
+        cases_transform_output.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_cases_transform_output.gzip", compression = "gzip")
+        #cases_long_train.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_train.gzip", compression = "gzip")
+        #cases_long_test.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_test.gzip", compression = "gzip")
 
     else:
-        return cases_long_train, cases_long_test
+        return cases_long, cases_transform_output
 
-   
-def main():
-    parser = argparse.ArgumentParser(description='Data loader for measles data')
-    parser.add_argument('--k', type=int, default=52,
-                        help='step ahead prediction')
-    parser.add_argument('--t-lag', type=int, default=130,
-                        help='number of lags')
-    parser.add_argument('--test-size', type=float, default=0.3,
-                        help='proportion of data for test')
-    parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv",
-                        help='location of data')
-    parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv",
-                        help='location of data')
-    parser.add_argument('--write-to-file', action='store_true',
-                        help='whether to write to file')
-    parser.add_argument('--include-nbc-cases', action='store_true',
-                        help='whether to include nearest big city cases')
-    parser.add_argument('--verbose', action='store_true',
-                        help='whether to print verbose')
-    args = parser.parse_args()
-    create_measles_data(k = args.k,
-                        t_lag = args.t_lag,
-                        test_size = args.test_size,
-                        susc_data_loc = args.susc_data_loc,
-                        birth_data_loc = args.birth_data_loc,
-                        write_to_file = args.write_to_file,
-                        include_nbc_cases = args.include_nbc_cases,
-                        verbose = args.verbose)
+def get_train_test(dat, wrt, test_size):
+    #split train/test
+    dat_train = dat[dat[wrt] <= dat[wrt].quantile(1 - test_size)]
+    dat_test = dat[dat[wrt] > dat[wrt].quantile(1 - test_size)]
+    return dat_train, dat_test
+    
+
+
+
 
 
 
 
 if __name__ == "__main__":
-    main()
+    cases_train, cases_test = create_measles_data(k = 52, 
+                                                  t_lag = 130, 
+                                                  susc_data_loc = "../../../output/data/tsir_susceptibles/tsir_susceptibles.csv", 
+                                                  birth_data_loc = "../../../data/ewBu4464.csv",
+                                                  write_to_file = False)
+
+    cases_train, cases_test = get_train_test(dat = cases, wrt = 'time', test_size = 0.3)
+
+
+    k_to_not_run = []
+    #k_seq = np.concatenate((np.arange(1, 13, 1), np.arange(12, 53, 4)))
+    k_seq = [51, 52]
+    k_to_run = [k for k in k_seq if not k in k_to_not_run]
 
 
 
+    for i in k_to_run:
+        create_measles_data(k = i, t_lag = 130)
+        print("#############" + str(i) + " written to file#############")
+
+
+    #print column names
+    for i in cases_long.columns:
+        print(i)

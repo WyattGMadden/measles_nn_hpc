@@ -1,5 +1,4 @@
 import argparse
-import data_load as mdl
 
 import torch
 from torch import nn

@@ -1,5 +1,10 @@
 import argparse
-import data_load as mdl
+import sys
+
+original_sys_path = sys.path.copy()
+sys.path.append('../data_processing/')
+import prevac_measles_data_loader as mdl
+sys.path = original_sys_path
 
 import torch
 from torch import nn

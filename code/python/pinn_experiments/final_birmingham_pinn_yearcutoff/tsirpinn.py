@@ -264,7 +264,7 @@ def main():
     model.train()
     ode_model.train()
 
-    S_hp = 1 / 10
+    S_hp = 1 / 100
     I_hp = 1 * 10
     ode_hp = 1 * 1
 

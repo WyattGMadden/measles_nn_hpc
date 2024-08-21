@@ -281,9 +281,53 @@ big_city_sep_high |>
     geom_boxplot(aes(x = pop_group, y = rel_value), outlier.size = .3) +
     facet_wrap( ~ name, nrow = 1) +
     #vertical x 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5)) + 
     labs(y = "Relative Contribution of Core Cities \nto Local Transmission", 
          x = "Log Population Size (15-Quantile)")
 
     
 ggsave(paste0("~/resubmission_nn_temp/", "k", k, "sep_high_pop_groups_over_pop_cut_15quantile.png"), width = 9, height = 5)
+
+big_city_sep_high |>
+    filter(name %in% big_cities) |>
+    #set city factor levels by population
+    mutate(name = paste0(name, " Incidence Lags"),
+           name = factor(name,
+                         levels = paste0(big_cities, " Incidence Lags"))) |>
+    group_by(name) |>
+    mutate(rel_value = (rel_value - min(rel_value)) / (max(rel_value) - min(rel_value))) |>
+#    mutate(pop_group = cut(log(city_pop), breaks = 10)) |>
+    #breaks on quantile
+    mutate(pop_group = cut_number(log(city_pop), 20)) |>
+    ggplot() +
+    geom_boxplot(aes(x = pop_group, y = rel_value), outlier.size = .3) +
+    facet_wrap( ~ name, nrow = 1) +
+    #vertical x 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5)) + 
+    labs(y = "Relative Contribution of Core Cities \nto Local Transmission", 
+         x = "Log Population Size (20-Quantile)")
+
+    
+ggsave(paste0("~/resubmission_nn_temp/", "k", k, "sep_high_pop_groups_over_pop_cut_20quantile.png"), width = 9, height = 5)
+
+big_city_sep_high |>
+    filter(name %in% big_cities) |>
+    #set city factor levels by population
+    mutate(name = paste0(name, " Incidence Lags"),
+           name = factor(name,
+                         levels = paste0(big_cities, " Incidence Lags"))) |>
+    group_by(name) |>
+    mutate(rel_value = (rel_value - min(rel_value)) / (max(rel_value) - min(rel_value))) |>
+#    mutate(pop_group = cut(log(city_pop), breaks = 10)) |>
+    #breaks on quantile
+    mutate(pop_group = cut_number(log(city_pop), 25)) |>
+    ggplot() +
+    geom_boxplot(aes(x = pop_group, y = rel_value), outlier.size = .3) +
+    facet_wrap( ~ name, nrow = 1) +
+    #vertical x 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5)) + 
+    labs(y = "Relative Contribution of Core Cities \nto Local Transmission", 
+         x = "Log Population Size (25-Quantile)")
+
+    
+ggsave(paste0("~/resubmission_nn_temp/", "k", k, "sep_high_pop_groups_over_pop_cut_25quantile.png"), width = 9, height = 5)

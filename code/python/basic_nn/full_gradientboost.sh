@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Job name equivalent
-job_name="testbasicnn"
+job_name="gradientboost"
 log_dir="./logs"
 mkdir -p $log_dir  # Ensure log directory exists
 
@@ -20,8 +20,9 @@ conda activate finalmlenv
 # just 26 and 52
 #job_indices=({26..52..26})
 #just 52
-#job_indices=(1 4 12 20 34 52)
-job_indices=(34)
+#job_indices=(52)
+job_indices=(1 4 12 20 34 52)
+
 
 # Maximum number of concurrent jobs
 max_jobs=2
@@ -30,13 +31,13 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_basic.py --num-epochs=200 \
+    python3 full_gradientboost.py --n-iterations=1000 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
-        --save-data-loc="../../../output/models/basic_nn_8020/" \
+        --save-data-loc="../../../output/models/gradientboost/" \
         --susc-data-loc="../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
         --birth-data-loc="../../../data/births/ewBu4464.csv" \
-        --test-size=0.20\
+        --test-size=0.251197 \
         --verbose 
     
     # Increment and manage job count

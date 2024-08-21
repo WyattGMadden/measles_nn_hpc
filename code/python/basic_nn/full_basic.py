@@ -92,7 +92,16 @@ def main():
 
 
     for epoch in range(1, args.num_epochs + 1):
-        fbf.train(args, model, device, train_dataloader, optimizer, loss_fn, epoch)
+        fbf.train(
+                model, 
+                device, 
+                train_dataloader, 
+                optimizer, 
+                loss_fn, 
+                epoch, 
+                log_interval = args.log_interval,
+                dry_run = args.dry_run
+                )
         fbf.test(model, device, test_dataloader, loss_fn)
 
     if args.save_model:

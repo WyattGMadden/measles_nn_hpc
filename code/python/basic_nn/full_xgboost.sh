@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Job name equivalent
-job_name="randomforest100"
+job_name="xgboost100"
 log_dir="./logs"
 mkdir -p $log_dir  # Ensure log directory exists
 
@@ -20,7 +20,7 @@ conda activate finalmlenv
 # just 26 and 52
 #job_indices=({26..52..26})
 #just 52
-job_indices=(1 4 12 20 34)
+job_indices=(52)
 
 # Maximum number of concurrent jobs
 max_jobs=2
@@ -29,10 +29,10 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_random_forest.py --n-estimators=100 \
+    python3 full_xgboost.py --n-estimators=100 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
-        --save-data-loc="../../../output/models/random_forest_100/" \
+        --save-data-loc="../../../output/models/xgboost_100/" \
         --susc-data-loc="../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
         --birth-data-loc="../../../data/births/ewBu4464.csv" \
         --test-size=0.251197 \

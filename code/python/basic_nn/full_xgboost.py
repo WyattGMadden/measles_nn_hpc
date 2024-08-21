@@ -44,7 +44,7 @@ def main():
     model = xgb.XGBRegressor(
             n_estimators=args.n_estimators,
             random_state=args.random_state, 
-            verbosity=2 if args.verbose else 0)
+            verbosity=2)
 
 
     train_data_X = train_data.X.numpy()
@@ -67,7 +67,7 @@ def main():
 
     if args.save_model:
         # Saving the model and outputs
-        fbf.save_model(model, args.save_data_loc, str(args.k) + "_xgb_model.joblib")
+        model.save_model(args.save_data_loc + str(args.k) + "_xgb_model.json")
         
         id_train['train_test'] = 'train'
         id_test['train_test'] = 'test'

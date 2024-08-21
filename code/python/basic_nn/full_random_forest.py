@@ -48,9 +48,10 @@ def main():
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.test_size)
 
     model = RandomForestRegressor(
-            n_estimators=args.n_estimators, 
-            random_state=args.random_state, 
-            verbose=2)
+                n_estimators=args.n_estimators, 
+                random_state=args.random_state, 
+                verbose=2
+            )
 
 
     train_data_X = train_data.X.numpy()

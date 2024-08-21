@@ -87,7 +87,7 @@ def get_dataloaders(train_data, test_data, batch_size):
 
 
 
-def train(args, model, device, train_loader, optimizer, loss_fn, epoch):
+def train(model, device, train_loader, optimizer, loss_fn, epoch, log_interval, dry_run = False):
     model.train()
     for dataloader_iter, (X, y) in enumerate(train_loader):
         X, y = X.to(device), y.to(device)
@@ -96,11 +96,11 @@ def train(args, model, device, train_loader, optimizer, loss_fn, epoch):
         loss = loss_fn(pred, y)
         loss.backward()
         optimizer.step()
-        if dataloader_iter % args.log_interval == 0:
+        if dataloader_iter % log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, dataloader_iter * len(X), len(train_loader.dataset),
                 100. * dataloader_iter / len(train_loader), loss.item()))
-            if args.dry_run:
+            if dry_run:
                 break       
 
 def test(model, device, test_loader, loss_fn):

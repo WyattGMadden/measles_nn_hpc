@@ -56,7 +56,7 @@ def main():
     parser = argparse.ArgumentParser(description='Tune Neural Network Hyperparameters')
     parser.add_argument('--num-samples', type=int, default=10, help='Number of tuning samples')
     parser.add_argument('--max-num-epochs', type=int, default=10, help='Maximum number of epochs')
-    parser.add_argument('--gpus-per-trial', type=float, default=0, help='GPUs per trial')
+    parser.add_argument('--gpus-per-trial', type=float, default=1, help='GPUs per trial')
     args = parser.parse_args()
 
     # Configuration for hyperparameter tuning

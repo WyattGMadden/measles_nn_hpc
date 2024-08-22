@@ -31,12 +31,15 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_gradientboost.py --n-iterations=1000 \
+    python3 full_gradientboost.py --n-estimators=1000 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
         --save-data-loc="../../../output/models/gradientboost/" \
-        --susc-data-loc="../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
-        --birth-data-loc="../../../data/births/ewBu4464.csv" \
+        --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \
+        --pop-data-loc="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv" \
+        --coords-data-loc="../../../data/data_from_measles_competing_risks/coordinates_urban.csv" \
+        --susc-data-loc="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
+        --birth-data-loc="../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
         --test-size=0.251197 \
         --verbose 
     

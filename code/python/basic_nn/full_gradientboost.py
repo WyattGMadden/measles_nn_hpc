@@ -9,18 +9,25 @@ sys.path = original_sys_path
 import numpy as np
 import pandas as pd
 
-from sklearn.linear_model import SGDRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error
 
 import full_basic_functions as fbf
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Gradient Descent Regression')
-    parser.add_argument('--n-iterations', type=int, default=1000, help='number of iterations (default: 1000)')
+    parser = argparse.ArgumentParser(description='Gradient Boosting Regression')
+    parser.add_argument('--n-estimators', type=int, default=100, help='number of boosting stages (default: 100)')
+    parser.add_argument('--learning-rate', type=float, default=0.1, help='learning rate')
     parser.add_argument('--k', type=int, default=52, help='step ahead prediction')
     parser.add_argument('--test-size', type=float, default=0.3, help='proportion of data for test')
     parser.add_argument('--save-data-loc', type=str, default=".", help='location to save output')
+    parser.add_argument('--cases-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--pop-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--coords-data-loc', type=str, default=".",
+                        help='location of data')
     parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv", help='location of data')
     parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv", help='location of data')
     parser.add_argument('--random-state', type=int, default=42, help='random seed (default: 42)')
@@ -35,14 +42,18 @@ def main():
 
     cases, transform_data = mdl.create_measles_data(k=args.k,
                                                     t_lag=130,
+                                                    cases_data_loc = args.cases_data_loc,
+                                                    pop_data_loc = args.pop_data_loc,
+                                                    coords_data_loc = args.coords_data_loc,
                                                     susc_data_loc=args.susc_data_loc,
                                                     birth_data_loc=args.birth_data_loc,
                                                     top_12_cities=args.top_12_cities,
                                                     verbose=args.verbose)
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.test_size)
 
-    model = SGDRegressor(
-            max_iter=args.n_iterations,
+    model = GradientBoostingRegressor(
+            n_estimators=args.n_estimators,
+            learning_rate=args.learning_rate,
             random_state=args.random_state)
 
     train_data_X = train_data.X.numpy()
@@ -64,9 +75,9 @@ def main():
         print("\n")
 
     if args.save_model:
-        # Save model using joblib or pickle as SGDRegressor does not have a save_model method
+        # Serialize the model using joblib or pickle
         import joblib
-        joblib.dump(model, args.save_data_loc + str(args.k) + "_sgd_model.pkl")
+        joblib.dump(model, args.save_data_loc + str(args.k) + "_gb_model.pkl")
         
         id_train['train_test'] = 'train'
         id_test['train_test'] = 'test'

@@ -20,7 +20,8 @@ conda activate finalmlenv
 # just 26 and 52
 #job_indices=({26..52..26})
 #just 52
-job_indices=(1 4 12 20 34 52)
+#job_indices=(1 4 12 20 34 52)
+job_indices=(12 20 34 52)
 
 # Maximum number of concurrent jobs
 max_jobs=2
@@ -33,8 +34,11 @@ do
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
         --save-data-loc="../../../output/models/basic_nn_7030/" \
-        --susc-data-loc="../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
-        --birth-data-loc="../../../data/births/ewBu4464.csv" \
+        --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \
+        --pop-data-loc="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv" \
+        --coords-data-loc="../../../data/data_from_measles_competing_risks/coordinates_urban.csv" \
+        --susc-data-loc="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
+        --birth-data-loc="../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
         --test-size=0.30\
         --verbose 
     

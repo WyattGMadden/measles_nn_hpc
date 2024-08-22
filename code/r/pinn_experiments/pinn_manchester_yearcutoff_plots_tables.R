@@ -2,7 +2,7 @@ library(tidyverse)
 library(patchwork)
 library(kableExtra)
 theme_set(theme_classic())
-save_dir <- "~/resubmission_nn_temp/"
+save_dir <- "~/resubmission_nn_temp/manchester_pinn"
 
 
 #filter dirs that include "_fit_info"

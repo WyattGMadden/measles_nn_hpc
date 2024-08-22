@@ -33,8 +33,11 @@ do
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
         --save-data-loc="../../../output/models/xgboost_100/" \
-        --susc-data-loc="../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
-        --birth-data-loc="../../../data/births/ewBu4464.csv" \
+        --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \
+        --pop-data-loc="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv" \
+        --coords-data-loc="../../../data/data_from_measles_competing_risks/coordinates_urban.csv" \
+        --susc-data-loc="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
+        --birth-data-loc="../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
         --test-size=0.251197 \
         --verbose 
     

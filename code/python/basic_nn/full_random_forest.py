@@ -27,6 +27,12 @@ def main():
     parser.add_argument('--k', type=int, default=52, help='step ahead prediction')
     parser.add_argument('--test-size', type=float, default=0.3, help='proportion of data for test')
     parser.add_argument('--save-data-loc', type=str, default=".", help='location to save output')
+    parser.add_argument('--cases-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--pop-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--coords-data-loc', type=str, default=".",
+                        help='location of data')
     parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv", help='location of data')
     parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv", help='location of data')
     parser.add_argument('--random-state', type=int, default=42, help='random seed (default: 42)')
@@ -41,6 +47,9 @@ def main():
 
     cases, transform_data = mdl.create_measles_data(k=args.k,
                                                     t_lag=130,
+                                                    cases_data_loc = args.cases_data_loc,
+                                                    pop_data_loc = args.pop_data_loc,
+                                                    coords_data_loc = args.coords_data_loc,
                                                     susc_data_loc=args.susc_data_loc,
                                                     birth_data_loc=args.birth_data_loc,
                                                     top_12_cities=args.top_12_cities,

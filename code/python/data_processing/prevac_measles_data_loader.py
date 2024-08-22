@@ -1,19 +1,32 @@
 
 import numpy as np
 import pandas as pd
+import urllib.request
 import torch
 np.random.seed(2)
 
 
 
 
-def create_measles_data(k, t_lag, birth_data_loc, susc_data_loc, write_to_file = False, top_12_cities = False, verbose = False, current_births = False):
+def create_measles_data(
+        k, 
+        t_lag, 
+        cases_data_loc,
+        pop_data_loc,
+        coords_data_loc,
+        birth_data_loc, 
+        susc_data_loc, 
+        write_to_file = False, 
+        top_12_cities = False, 
+        verbose = False, 
+        current_births = False
+        ):
 
-    cases = pd.read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/inferred_cases_urban.csv").rename(columns={"Unnamed: 0": "time"})
+    cases = pd.read_csv(cases_data_loc).rename(columns={"Unnamed: 0": "time"})
 
-    population = pd.read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/inferred_pop_urban.csv").rename(columns={"Unnamed: 0": "time"})
+    population = pd.read_csv(pop_data_loc).rename(columns={"Unnamed: 0": "time"})
 
-    coords = pd.read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/coordinates_urban.csv", index_col = 0).rename(columns={"Unnamed: 0": "time"}).T
+    coords = pd.read_csv(coods_data_loc, index_col = 0).rename(columns={"Unnamed: 0": "time"}).T
 
     births = pd.read_csv(birth_data_loc, index_col = 1).rename(columns={"Unnamed: 0": "year"})
 
@@ -327,9 +340,10 @@ def get_train_test(dat, wrt, test_size):
 if __name__ == "__main__":
     cases_train, cases_test = create_measles_data(k = 52, 
                                                   t_lag = 130, 
-                                                  susc_data_loc = "../../../output/data/tsir_susceptibles/tsir_susceptibles.csv", 
-                                                  birth_data_loc = "../../../data/ewBu4464.csv",
-                                                  write_to_file = False)
+                                                  susc_data_loc = "../../../data/tsir_susceptibles/tsir_susceptibles.csv", 
+                                                  birth_data_loc = "../../../data/births/ewBu4464.csv",
+                                                  write_to_file = False,
+                                                  verbose = True)
 
     cases_train, cases_test = get_train_test(dat = cases, wrt = 'time', test_size = 0.3)
 

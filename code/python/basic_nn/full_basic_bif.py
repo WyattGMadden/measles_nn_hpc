@@ -23,6 +23,12 @@ def main():
                         help='proportion of data for test')
     parser.add_argument('--save-data-loc', type=str, default="../../../output/models/basic_nn_bif/",
                         help='location to save output')
+    parser.add_argument('--cases-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--pop-data-loc', type=str, default=".",
+                        help='location of data')
+    parser.add_argument('--coords-data-loc', type=str, default=".",
+                        help='location of data')
     parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv",
                         help='location of data')
     parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv",
@@ -64,6 +70,9 @@ def main():
     
     cases, transform_data = mdl.create_measles_data(k = args.k,
                                                     t_lag = 52,
+                                                    cases_data_loc = args.cases_data_loc,
+                                                    pop_data_loc = args.pop_data_loc,
+                                                    coords_data_loc = args.coords_data_loc,
                                                     susc_data_loc = args.susc_data_loc,
                                                     birth_data_loc = args.birth_data_loc,
                                                     top_12_cities = args.top_12_cities,

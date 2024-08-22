@@ -27,7 +27,17 @@ def train_with_tuning(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Load and process data
-    cases, transform_data = mdl.create_measles_data(k=config['k'], t_lag=130, susc_data_loc=config['susc_data_loc'], birth_data_loc=config['birth_data_loc'], top_12_cities=config['top_12_cities'], verbose=config['verbose'])
+    cases, transform_data = mdl.create_measles_data(
+            k=config['k'], 
+            t_lag=130, 
+            cases_data_loc = config['cases_data_loc'], 
+            pop_data_loc = config['pop_data_loc'], 
+            coords_data_loc = config['coords_data_loc'], 
+            susc_data_loc=config['susc_data_loc'], 
+            birth_data_loc=config['birth_data_loc'], 
+            top_12_cities=config['top_12_cities'], 
+            verbose=config['verbose']
+            )
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, config['test_size'])
     
     # Define model
@@ -62,8 +72,11 @@ def main():
     # Configuration for hyperparameter tuning
     config = {
         "k": 52,
-        "susc_data_loc": os.path.abspath("../../../data/tsir_susceptibles/tsir_susceptibles.csv"),
-        "birth_data_loc": os.path.abspath("../../../data/births/ewBu4464.csv"),
+        "cases_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv"),
+        "pop_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv"),
+        "coords_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/coordinates_urban.csv"),
+        "susc_data_loc": os.path.abspath("../../../output/data/tsir_susceptibles/tsir_susceptibles.csv"),
+        "birth_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/ewBu4464.csv"),
         "top_12_cities": True,
         "verbose": True,
         "test_size": 0.3,

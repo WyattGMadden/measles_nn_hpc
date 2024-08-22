@@ -26,7 +26,7 @@ def create_measles_data(
 
     population = pd.read_csv(pop_data_loc).rename(columns={"Unnamed: 0": "time"})
 
-    coords = pd.read_csv(coods_data_loc, index_col = 0).rename(columns={"Unnamed: 0": "time"}).T
+    coords = pd.read_csv(coords_data_loc, index_col = 0).rename(columns={"Unnamed: 0": "time"}).T
 
     births = pd.read_csv(birth_data_loc, index_col = 1).rename(columns={"Unnamed: 0": "year"})
 

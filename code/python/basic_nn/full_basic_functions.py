@@ -21,22 +21,29 @@ class Data(Dataset):
     def __len__(self):
         return self.len
 
+
 class NeuralNetwork(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, input_dim, hidden_dim, output_dim, num_hidden_layers=3):
         super(NeuralNetwork, self).__init__()
-        #self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
+        layers = [
             nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim),
-            ) 
+            nn.ReLU()
+        ]
+
+        # Append the specified number of hidden layers
+        for _ in range(num_hidden_layers):
+            layers.append(nn.Linear(hidden_dim, hidden_dim))
+            layers.append(nn.ReLU())
+
+        # Output layer
+        layers.append(nn.Linear(hidden_dim, output_dim))
+
+        # Stack all layers in a Sequential module
+        self.linear_relu_stack = nn.Sequential(*layers)
+
     def forward(self, x):
-        #x = self.flatten(x)
         return self.linear_relu_stack(x)
+
 
 def process_data(cases, test_size):
 
@@ -89,6 +96,7 @@ def get_dataloaders(train_data, test_data, batch_size):
 
 def train(model, device, train_loader, optimizer, loss_fn, epoch, log_interval, dry_run = False):
     model.train()
+    train_loss = 0
     for dataloader_iter, (X, y) in enumerate(train_loader):
         X, y = X.to(device), y.to(device)
         optimizer.zero_grad()
@@ -102,6 +110,10 @@ def train(model, device, train_loader, optimizer, loss_fn, epoch, log_interval, 
                 100. * dataloader_iter / len(train_loader), loss.item()))
             if dry_run:
                 break       
+        train_loss += loss.item()
+
+    train_loss /= len(train_loader.dataset)
+    return train_loss
 
 def test(model, device, test_loader, loss_fn):
     model.eval()
@@ -113,7 +125,9 @@ def test(model, device, test_loader, loss_fn):
 
             test_loss += loss_fn(pred, y).item()  
 
-    test_loss /= len(test_loader.dataset)
 
     print('\nTest set: Average loss: {:.4f}\n'.format(
         test_loss, len(test_loader.dataset) * test_loader.batch_size))
+
+    test_loss /= len(test_loader.dataset)
+    return test_loss

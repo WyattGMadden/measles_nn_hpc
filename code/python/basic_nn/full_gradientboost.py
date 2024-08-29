@@ -54,7 +54,9 @@ def main():
     model = GradientBoostingRegressor(
             n_estimators=args.n_estimators,
             learning_rate=args.learning_rate,
-            random_state=args.random_state)
+            random_state=args.random_state,
+            verbose = 1
+            )
 
     train_data_X = train_data.X.numpy()
     train_data_y = train_data.y.numpy().flatten()
@@ -62,6 +64,7 @@ def main():
     test_data_X = test_data.X.numpy()
     test_data_y = test_data.y.numpy().flatten()
 
+    #make verbose
     model.fit(train_data_X, train_data_y)
 
     pred_train = model.predict(train_data_X)

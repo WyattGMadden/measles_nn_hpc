@@ -2,13 +2,13 @@ import argparse
 import sys
 import os
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from ray import tune
 from ray import train
 import ray
-
 
 # Adjust Python path for the script
 original_sys_path = sys.path.copy()
@@ -28,20 +28,20 @@ def train_with_tuning(config):
     
     # Load and process data
     cases, transform_data = mdl.create_measles_data(
-            k=config['k'], 
-            t_lag=130, 
-            cases_data_loc = config['cases_data_loc'], 
-            pop_data_loc = config['pop_data_loc'], 
-            coords_data_loc = config['coords_data_loc'], 
-            susc_data_loc=config['susc_data_loc'], 
-            birth_data_loc=config['birth_data_loc'], 
-            top_12_cities=config['top_12_cities'], 
-            verbose=config['verbose']
-            )
+        k=config['k'], 
+        t_lag=130, 
+        cases_data_loc=config['cases_data_loc'], 
+        pop_data_loc=config['pop_data_loc'], 
+        coords_data_loc=config['coords_data_loc'], 
+        susc_data_loc=config['susc_data_loc'], 
+        birth_data_loc=config['birth_data_loc'], 
+        top_12_cities=config['top_12_cities'], 
+        verbose=config['verbose']
+    )
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, config['test_size'])
     
-    # Define model
-    model = fbf.NeuralNetwork(num_features, config['hidden_dim'], 1).to(device)
+    # Define model with the specified number of hidden layers
+    model = fbf.NeuralNetwork(num_features, config['hidden_dim'], 1, num_hidden_layers=config['num_hidden_layers']).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
     loss_fn = nn.MSELoss()
 
@@ -50,28 +50,26 @@ def train_with_tuning(config):
         fbf.train(model=model, device=device, train_loader=DataLoader(train_data, batch_size=64, shuffle=True), optimizer=optimizer, loss_fn=loss_fn, epoch=epoch, log_interval=100)
         loss = fbf.test(model, device, DataLoader(test_data, batch_size=64, shuffle=False), loss_fn)
 
-    # Save train loss
+    # Reporting metrics
     pred_train = model(train_data.X.to(device)).to("cpu").detach().numpy()
     train_mse = np.mean((pred_train - train_data.y.detach().numpy())**2)
-    train.report({'train_mse': train_mse})  # Use tune.report to send metrics
-
-    # Save test loss
+    train.report({'train_mse': train_mse})
     pred_test = model(test_data.X.to(device)).to("cpu").detach().numpy()
     test_mse = np.mean((pred_test - test_data.y.detach().numpy())**2)
-    train.report({'test_mse': test_mse})  # Use tune.report to send metrics
+    train.report({'test_mse': test_mse})
 
-    
 
 def main():
     parser = argparse.ArgumentParser(description='Tune Neural Network Hyperparameters')
-    parser.add_argument('--num-samples', type=int, default=10, help='Number of tuning samples')
-    parser.add_argument('--max-num-epochs', type=int, default=10, help='Maximum number of epochs')
+    parser.add_argument('--k', type=int, default=1, help='k-steps ahead')
+    parser.add_argument('--num-samples', type=int, default=100, help='Number of tuning samples')
+    parser.add_argument('--max-num-epochs', type=int, default=50, help='Maximum number of epochs')
     parser.add_argument('--gpus-per-trial', type=float, default=1, help='GPUs per trial')
     args = parser.parse_args()
 
     # Configuration for hyperparameter tuning
     config = {
-        "k": 52,
+        "k": args.k,
         "cases_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv"),
         "pop_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv"),
         "coords_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/coordinates_urban.csv"),
@@ -79,12 +77,12 @@ def main():
         "birth_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/ewBu4464.csv"),
         "top_12_cities": True,
         "verbose": True,
-        "test_size": 0.3,
+        "test_size": 0.251197,
         "num_epochs": args.max_num_epochs,
-        "lr": tune.grid_search([0.01, 0.001, 0.0001]),
-        # 1/6 input dim - 5/6 input dim
+        "lr": tune.uniform(0.0001, 0.1),  # Using random search for learning rate
         "hidden_dim": tune.grid_search([240, 480, 721, 961, 1201]),
-        "weight_decay": tune.grid_search([0.01, 0.005, 0.001, 0.0005, 0.0001])
+        "weight_decay": tune.uniform(0.00001, 0.1),  # Using random search for weight decay
+        "num_hidden_layers": tune.grid_search([1, 2, 3, 4])  # Adding this line to include variable hidden layers
     }
 
     # Start Ray Tune
@@ -96,10 +94,30 @@ def main():
     )
 
     best_trial = result.get_best_trial("test_mse", "min", "last")
+
+    # Create a summary DataFrame
+    trials_data = []
+    for trial in result.trials:
+        trial_data = {
+            "trial_id": trial.trial_id,
+            "test_mse": trial.last_result["test_mse"],
+            "is_best": trial.trial_id == best_trial.trial_id
+        }
+        # Unpack the config dictionary into individual columns
+        trial_data.update(trial.config)
+        trials_data.append(trial_data)
+
+    df = pd.DataFrame(trials_data)
+    df.sort_values("test_mse", inplace=True)
+
+    # Save to CSV
+    save_dir = "../../../output/figures/basic_nn/raytune_hp_optim/"
+    df.to_csv(save_dir + "raytune_hp_optim_"+ "k_" + str(args.k) + ".csv", index=False)
+
+    print("Results saved to hyperparameter_optimization_results.csv")
     print("Best trial config: {}".format(best_trial.config))
-    print("Best trial final validation loss: {}".format(best_trial.last_result["test_mse"]))
+    print("Best trial final test MSE: {}".format(best_trial.last_result["test_mse"]))
 
 if __name__ == '__main__':
     main()
-
 

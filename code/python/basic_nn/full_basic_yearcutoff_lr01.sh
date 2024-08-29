@@ -29,13 +29,13 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_basic.py --num-epochs=10 \
+    python3 full_basic.py --num-epochs=20 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
         --num-hidden-layers=1 \
         --hidden-dim=480 \
         --lr=0.0001 \
-        --weight-decay=0.0176 \
+        --weight-decay=0.00176 \
         --save-data-loc="../../../output/models/basic_nn_yearcutoff/" \
         --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \
         --pop-data-loc="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv" \

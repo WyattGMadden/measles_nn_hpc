@@ -83,7 +83,6 @@ def main():
 
     if args.save_model:
         # Saving the model and outputs
-        fbf.save_model(model, args.save_data_loc, str(args.k) + "_rf_model.joblib")
         joblib.dump(model, args.save_data_loc + str(args.k) + "_rf_model.joblib")
         
         id_train['train_test'] = 'train'

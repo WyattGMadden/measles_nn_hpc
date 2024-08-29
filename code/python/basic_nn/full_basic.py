@@ -13,6 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import full_basic_functions as fbf
 
@@ -26,17 +27,23 @@ def main():
                         help='step ahead prediction')
     parser.add_argument('--test-size', type=float, default=0.3,
                         help='proportion of data for test')
+    parser.add_argument('--num-hidden-layers', type=int, default=3,
+                        help='Number of hidden layers in neural network')
+    parser.add_argument('--hidden-dim', type=int, default=721,
+                        help='Dimension of each hidden layer in neural network')
     parser.add_argument('--save-data-loc', type=str, default=".",
                         help='location to save output')
-    parser.add_argument('--cases-data-loc', type=str, default=".",
+    parser.add_argument('--cases-data-loc', 
+                        type=str, 
+                        default="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv",
                         help='location of data')
-    parser.add_argument('--pop-data-loc', type=str, default=".",
+    parser.add_argument('--pop-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv",
                         help='location of data')
-    parser.add_argument('--coords-data-loc', type=str, default=".",
+    parser.add_argument('--coords-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/coordinates_urban.csv",
                         help='location of data')
-    parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv",
+    parser.add_argument('--susc-data-loc', type=str, default="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv",
                         help='location of data')
-    parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv",
+    parser.add_argument('--birth-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/ewBu4464.csv",
                         help='location of data')
     parser.add_argument('--num-epochs', type=int, default=200, metavar='EN',
                         help='number of epochs to train (default: 10)')
@@ -55,6 +62,8 @@ def main():
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
     parser.add_argument('--top-12-cities', action='store_true', default=False,
+                        help='print info')
+    parser.add_argument('--output-lossplot', action='store_true', default=False,
                         help='print info')
     parser.add_argument('--verbose', action='store_true', default=False,
                         help='print info')
@@ -91,17 +100,24 @@ def main():
 
 
     input_dim = num_features
-    hidden_dim = int(np.floor((num_features + 1) * 2 / 3))
+    hidden_dim = args.hidden_dim
     output_dim = 1
-    model = fbf.NeuralNetwork(input_dim, hidden_dim, output_dim).to(device)
+    model = fbf.NeuralNetwork(
+            input_dim, 
+            hidden_dim, 
+            output_dim, 
+            num_hidden_layers = args.num_hidden_layers,
+            ).to(device)
 
     loss_fn = nn.MSELoss()
 
     optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay = args.weight_decay) # mse 0.881 (raytune)
 
+    train_loss = []
+    test_loss = []
 
     for epoch in range(1, args.num_epochs + 1):
-        fbf.train(
+        train_loss_i = fbf.train(
                 model, 
                 device, 
                 train_dataloader, 
@@ -111,10 +127,22 @@ def main():
                 log_interval = args.log_interval,
                 dry_run = args.dry_run
                 )
-        fbf.test(model, device, test_dataloader, loss_fn)
+        train_loss.append(train_loss_i)
+        test_loss_i = fbf.test(model, device, test_dataloader, loss_fn)
+        test_loss.append(test_loss_i)
 
     if args.save_model:
         torch.save(model.state_dict(), args.save_data_loc + str(args.k) + "_model.pt")
+
+    if args.output_lossplot:
+        # Plot loss
+        plt.plot(train_loss, label = "train")
+        plt.plot(test_loss, label = "test")
+        plt.legend()
+        #save
+        plt.savefig(args.save_data_loc + str(args.k) + "_loss.png")
+
+        
 
     pred_train = model(train_data.X.to(device)).to("cpu").detach().numpy()
     if args.verbose:

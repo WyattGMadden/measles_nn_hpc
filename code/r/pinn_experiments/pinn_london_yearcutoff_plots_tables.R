@@ -69,7 +69,13 @@ train_preds <- lapply(grep("_train_predictions", dirs, value = TRUE),
 #read in obs data
 train_fit <- arrow::read_parquet("../../../output/models/pinn_experiments/final_london_pinn_yearcutoff/naivepinn_train_predictions.parquet")
 
-
+# train/test original data
+train_original <- arrow::read_parquet("../../../output/data/train_test_k/k52_test.gzip") |>
+    select(time, city)
+train_original <- read_csv("../../../../output/data/train_test_k/k_52.csv") |>
+    filter(set == "train") |>
+    select(time, S, I) |>
+    mutate(model = "Observed Data")
 
 
 
@@ -145,6 +151,8 @@ ggsave(file.path(save_dir, "pinn_ab_test_pred_seasonal_param_fit.png"),
 #write to txt file
 
 save_dir <- "../../../output/tables"
+
+
 test_preds |>
     group_by(model) |>
     summarize(mae_S = mean(abs(S_pred - S)),

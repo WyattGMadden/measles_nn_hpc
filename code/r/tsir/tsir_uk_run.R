@@ -8,17 +8,16 @@ writeLines(deparse(runtsir), "runtsir.R")
 
 
 
-#test max's data
-births <- read_csv("https://raw.githubusercontent.com/msylau/measles_LASSO/main/data//E%26W/births_urban.csv") %>% 
+births <- read_csv("../../../data/data_from_measles_LASSO/births_urban.csv") %>%
     rename("year" = X) %>% 
     pivot_longer(2:ncol(.), names_to = "city", values_to = "births") %>%
     mutate(births = births / 26)
 
-inf_pop_urb <- read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/inferred_pop_urban.csv") %>% 
+inf_pop_urb <- read_csv("../../../data/data_from_measles_competing_risks/inf_pop_urb.csv") %>%
     rename("time" = `...1`) %>% 
     pivot_longer(2:ncol(.), names_to = "city", values_to = "pop")
 
-cases <- read_csv("https://raw.githubusercontent.com/msylau/measles_LASSO/main/data//E%26W/cases_urban.csv") %>%
+cases <- read_csv("../../../data/data_from_measles_LASSO/cases_urban.csv") %>%
     rename("time" = `...1`) %>% 
     pivot_longer(2:ncol(.), names_to = "city", values_to = "cases") %>% 
     mutate(year = floor(time))

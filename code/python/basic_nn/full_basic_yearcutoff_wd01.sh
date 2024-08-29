@@ -29,7 +29,7 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_basic.py --num-epochs=10 \
+    python3 full_basic.py --num-epochs=20 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
         --num-hidden-layers=1 \

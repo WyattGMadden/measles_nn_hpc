@@ -34,7 +34,7 @@ do
         --k=$SLURM_ARRAY_TASK_ID \
         --num-hidden-layers=1 \
         --hidden-dim=480 \
-        --lr=0.0001 \
+        --lr=0.001 \
         --weight-decay=0.0176 \
         --save-data-loc="../../../output/models/basic_nn_yearcutoff/" \
         --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \

@@ -5,7 +5,7 @@ library(prophet)
 set.seed(10161993)
 
 
-fit_prophet <- function(all_cities, city_index, save_dir = "../../../output/data/prophet/") {
+fit_prophet <- function(city_index, save_dir = "../../../output/data/prophet/") {
 
     # Read and prepare the data
     births <- read_csv("../../../data/data_from_measles_LASSO/births_urban.csv") %>%

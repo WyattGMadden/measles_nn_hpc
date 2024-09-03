@@ -17,6 +17,7 @@ def create_measles_data(
         birth_data_loc, 
         susc_data_loc, 
         write_to_file = False, 
+        write_loc = "../../../output/data/basic_nn/prefit_train_test/",
         top_12_cities = False, 
         verbose = False, 
         current_births = False
@@ -316,50 +317,45 @@ def create_measles_data(
 
 
     if write_to_file:
-        cases_long.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + ".gzip", compression = "gzip")
-        cases_transform_output.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_cases_transform_output.gzip", compression = "gzip")
-        #cases_long_train.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_train.gzip", compression = "gzip")
-        #cases_long_test.to_parquet("../../output/data/basic_nn/prefit_train_test/k" + str(k) + "_test.gzip", compression = "gzip")
+        cases_long.to_parquet(write_loc + "k" + str(k) + "_tlag" + str(t_lag) + ".gzip", compression = "gzip")
+        cases_transform_output.to_parquet(write_loc + "k" + str(k) + "_tlag" + str(t_lag) + "_cases_transform_output.gzip", compression = "gzip")
 
     else:
         return cases_long, cases_transform_output
 
-def get_train_test(dat, wrt, test_size):
-    #split train/test
-    dat_train = dat[dat[wrt] <= dat[wrt].quantile(1 - test_size)]
-    dat_test = dat[dat[wrt] > dat[wrt].quantile(1 - test_size)]
-    return dat_train, dat_test
     
 
+def run_experiments():
+    k_values = [1, 4, 12, 20, 34, 52]
+    t_lag_values = [26, 52, 78, 104, 130]
 
+    # Define file locations
+    cases_data_loc = "../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv"
+    pop_data_loc = "../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv"
+    coords_data_loc = "../../../data/data_from_measles_competing_risks/coordinates_urban.csv"
+    susc_data_loc = "../../../output/data/tsir_susceptibles/tsir_susceptibles.csv"
+    birth_data_loc = "../../../data/data_from_measles_competing_risks/ewBu4464.csv"
+    output_directory = "../../../output/data/basic_nn/prefit/"
 
+    # Iterate over all combinations of k and t_lag
+    for k in k_values:
+        for t_lag in t_lag_values:
+            if k < t_lag:
+                print(f"Running create_measles_data for k={k} and t_lag={t_lag}")
+                create_measles_data(
+                    k=k,
+                    t_lag=t_lag,
+                    cases_data_loc=cases_data_loc,
+                    pop_data_loc=pop_data_loc,
+                    coords_data_loc=coords_data_loc,
+                    susc_data_loc=susc_data_loc,
+                    birth_data_loc=birth_data_loc,
+                    top_12_cities=False,
+                    verbose=True,
+                    write_to_file=True,
+                    write_loc=output_directory
+                )
 
+if __name__ == '__main__':
+    run_experiments()
 
-
-
-if __name__ == "__main__":
-    cases_train, cases_test = create_measles_data(k = 52, 
-                                                  t_lag = 130, 
-                                                  susc_data_loc = "../../../data/tsir_susceptibles/tsir_susceptibles.csv", 
-                                                  birth_data_loc = "../../../data/births/ewBu4464.csv",
-                                                  write_to_file = False,
-                                                  verbose = True)
-
-    cases_train, cases_test = get_train_test(dat = cases, wrt = 'time', test_size = 0.3)
-
-
-    k_to_not_run = []
-    #k_seq = np.concatenate((np.arange(1, 13, 1), np.arange(12, 53, 4)))
-    k_seq = [51, 52]
-    k_to_run = [k for k in k_seq if not k in k_to_not_run]
-
-
-
-    for i in k_to_run:
-        create_measles_data(k = i, t_lag = 130)
-        print("#############" + str(i) + " written to file#############")
-
-
-    #print column names
-    for i in cases_long.columns:
-        print(i)

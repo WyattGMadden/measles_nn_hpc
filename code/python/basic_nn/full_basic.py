@@ -25,7 +25,7 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--k', type=int, default=52,
                         help='step ahead prediction')
-    parser.add_argument('--test-size', type=float, default=0.3,
+    parser.add_argument('--year-test-cutoff', type=float, default=61,
                         help='proportion of data for test')
     parser.add_argument('--num-hidden-layers', type=int, default=3,
                         help='Number of hidden layers in neural network')
@@ -67,6 +67,9 @@ def main():
                         help='print info')
     parser.add_argument('--verbose', action='store_true', default=False,
                         help='print info')
+    parser.add_argument('--t-lag', type=int, default=130, metavar='TL',
+                        help='Number of lags in features')
+
 
     args = parser.parse_args()
 
@@ -82,7 +85,7 @@ def main():
 
 
     cases, transform_data = mdl.create_measles_data(k = args.k,
-                                                    t_lag = 130,
+                                                    t_lag = args.t_lag,
                                                     cases_data_loc = args.cases_data_loc,
                                                     pop_data_loc = args.pop_data_loc,
                                                     coords_data_loc = args.coords_data_loc,
@@ -93,7 +96,7 @@ def main():
     
 
 
-    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.test_size)
+    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.year_test_cutoff)
     train_dataloader, test_dataloader = fbf.get_dataloaders(train_data = train_data,
                                                             test_data = test_data,
                                                             batch_size = 64)

@@ -45,46 +45,40 @@ class NeuralNetwork(nn.Module):
         return self.linear_relu_stack(x)
 
 
-def process_data(cases, test_size):
+def process_data(cases, year_test_cutoff):
+    # Extract the year from the 'time' column
+    cases['year'] = cases['time'].apply(lambda x: int(x))
+    
+    # Split data into training and test sets based on the cutoff year
+    cases_train = cases[cases['year'] < year_test_cutoff]
+    cases_test = cases[cases['year'] >= year_test_cutoff]
 
-
-    cases_train = cases[cases['time'] <= cases['time'].quantile(1 - test_size)]
-    cases_test = cases[cases['time'] > cases['time'].quantile(1 - test_size)]
-
+    # Prepare identifiers for training and test sets
     id_train = cases_train[['time', 'city']]
     id_test = cases_test[['time', 'city']]
 
-    y_train = cases_train['cases'].to_numpy()
-    y_train = y_train.reshape((y_train.shape[0], 1))
-    y_test = cases_test['cases'].to_numpy()
-    y_test = y_test.reshape((y_test.shape[0], 1))
+    # Prepare target variables for training and test sets
+    y_train = cases_train['cases'].to_numpy().reshape((-1, 1))
+    y_test = cases_test['cases'].to_numpy().reshape((-1, 1))
 
-    #X_train = train_df[abl_cols]
-    X_train = cases_train
-    X_train = X_train.drop(['time', 'city', 'cases', 'susc', 'pop'], axis = 1)
-    X_train = X_train.drop(['births'], axis = 1)
+    # Prepare feature matrices for training and test sets, dropping specific columns and filtering by regex
+    drop_columns = ['time', 'city', 'cases', 'susc', 'pop', 'births', 'year']
+    regex_filters = ['nbc', 'nearest_big_city', 'susc']
 
-    X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='nbc')))]
-    X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='nearest_big_city')))]
-    X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='susc')))]
-#    X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='nc')))]
+    X_train = cases_train.drop(columns=drop_columns)
+    X_test = cases_test.drop(columns=drop_columns)
 
-    #X_test = test_df[abl_cols]
-    X_test = cases_test
-    X_test = X_test.drop(['time', 'city', 'cases', 'susc', 'pop'], axis = 1)
-    X_test = X_test.drop(['births'], axis = 1)
+    for regex in regex_filters:
+        X_train = X_train[X_train.columns.drop(list(X_train.filter(regex=regex)))]
+        X_test = X_test[X_test.columns.drop(list(X_test.filter(regex=regex)))]
 
-    X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='nbc')))]
-    X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='nearest_big_city')))]
-    X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='susc')))]
-#    X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='nc')))]
-
-
+    # Create dataset objects for DataLoader
     train_data = Data(X_train, y_train)
     test_data = Data(X_test, y_test)
 
-
     return train_data, test_data, X_train.shape[1], id_train, id_test
+
+
 
 def get_dataloaders(train_data, test_data, batch_size):
     test_dataloader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, pin_memory = True)

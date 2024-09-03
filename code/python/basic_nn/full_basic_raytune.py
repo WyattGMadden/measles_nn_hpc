@@ -29,7 +29,7 @@ def train_with_tuning(config):
     # Load and process data
     cases, transform_data = mdl.create_measles_data(
         k=config['k'], 
-        t_lag=130, 
+        t_lag=config['t_lag'], 
         cases_data_loc=config['cases_data_loc'], 
         pop_data_loc=config['pop_data_loc'], 
         coords_data_loc=config['coords_data_loc'], 
@@ -38,7 +38,7 @@ def train_with_tuning(config):
         top_12_cities=config['top_12_cities'], 
         verbose=config['verbose']
     )
-    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, config['test_size'])
+    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, config['year_test_cutoff'])
     
     # Define model with the specified number of hidden layers
     model = fbf.NeuralNetwork(num_features, config['hidden_dim'], 1, num_hidden_layers=config['num_hidden_layers']).to(device)
@@ -62,8 +62,8 @@ def train_with_tuning(config):
 def main():
     parser = argparse.ArgumentParser(description='Tune Neural Network Hyperparameters')
     parser.add_argument('--k', type=int, default=1, help='k-steps ahead')
-    parser.add_argument('--num-samples', type=int, default=100, help='Number of tuning samples')
-    parser.add_argument('--max-num-epochs', type=int, default=50, help='Maximum number of epochs')
+    parser.add_argument('--num-samples', type=int, default=20, help='Number of tuning samples')
+    parser.add_argument('--max-num-epochs', type=int, default=20, help='Maximum number of epochs')
     parser.add_argument('--gpus-per-trial', type=float, default=1, help='GPUs per trial')
     args = parser.parse_args()
 
@@ -77,18 +77,21 @@ def main():
         "birth_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/ewBu4464.csv"),
         "top_12_cities": True,
         "verbose": True,
-        "test_size": 0.251197,
+        "year_test_cutoff": 61,
         "num_epochs": args.max_num_epochs,
-        "lr": tune.uniform(0.0001, 0.1),  # Using random search for learning rate
-        "hidden_dim": tune.grid_search([240, 480, 721, 961, 1201]),
-        "weight_decay": tune.uniform(0.00001, 0.1),  # Using random search for weight decay
-        "num_hidden_layers": tune.grid_search([1, 2, 3, 4])  # Adding this line to include variable hidden layers
+        "lr": 0.001,  # Using random search for learning rate
+        #"lr": tune.uniform(0.0001, 0.01),  # Using random search for learning rate
+        #"t_lag": tune.grid_search([26, 26*2, 26*3, 26*4, 26*5]),
+        "t_lag": tune.grid_search([26, 26*2, 26*3, 26*5]),
+        "hidden_dim": tune.grid_search([240, 721, 1201]),
+        "weight_decay": tune.uniform(0.0001, 0.1),  # Using random search for weight decay
+        "num_hidden_layers": tune.grid_search([1, 2, 3])  # Adding this line to include variable hidden layers
     }
 
     # Start Ray Tune
     result = tune.run(
         train_with_tuning,
-        resources_per_trial={"cpu": 1, "gpu": args.gpus_per_trial},
+        resources_per_trial={"cpu": 12, "gpu": args.gpus_per_trial},
         config=config,
         num_samples=args.num_samples
     )

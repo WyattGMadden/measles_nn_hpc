@@ -29,22 +29,23 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "Running task index: $SLURM_ARRAY_TASK_ID"
-    python3 full_basic.py --num-epochs=600 \
+    python3 full_basic.py --num-epochs=200 \
         --save-model \
         --k=$SLURM_ARRAY_TASK_ID \
-        --num-hidden-layers=1 \
-        --hidden-dim=480 \
-        --lr=0.0001 \
-        --weight-decay=0.0176 \
-        --save-data-loc="../../../output/models/basic_nn_yearcutoff/" \
+        --num-hidden-layers=2 \
+        --hidden-dim=240 \
+        --lr=0.001 \
+        --weight-decay=0.0122 \
+        --save-data-loc="../../../output/models/basic_nn_yearcutoff_minimal/" \
         --cases-data-loc="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv" \
         --pop-data-loc="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv" \
         --coords-data-loc="../../../data/data_from_measles_competing_risks/coordinates_urban.csv" \
         --susc-data-loc="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
         --birth-data-loc="../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
-        --test-size=0.251197 \
+        --year-test-cutoff=61 \
         --output-lossplot \
-        --verbose 
+        --verbose \
+        --t-lag=26
     
     # Increment and manage job count
     ((current_jobs++))

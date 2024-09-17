@@ -28,7 +28,8 @@ def get_cities(data, cities):
     return data_cities
 
 def process(data, time_unit = 365):
-    data['time'] = np.round((data['time'] - 51) * 26 + 1)
+    data['time_original'] = data['time']
+    data['time'] = np.round((data['time'] - 49) * 26 + 1)
     data['births'] = data['births'] / 26
     return data
 
@@ -191,6 +192,8 @@ def main():
     parser.add_argument("--tlag", type=int, default=130, help="number of lags in features")
     parser.add_argument("--year-test-cutoff", type=int, default=61, help="train/test year cutoff")
     parser.add_argument("--city", type=str, default="London", help="which city to fit PINN on")
+    parser.add_argument("--num-epochs", type=int, default=10, help="number of epochs")
+    parser.add_argument("--wd-fnn", type=float, default="0.01", help="weight decay on non-PINN portion of model")
     parser.add_argument("--write-loc", type=str, default="../../../../output/models/pinn_experiments/final_onecity_pinn_yearcutoff/", help="location to save output")
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
@@ -254,9 +257,9 @@ def main():
     loss_fn = nn.L1Loss()
 
     optimizer = torch.optim.Adam(model.parameters(), 
-                                 lr=0.01)
+                                 lr=args.wd_fnn)
     optimizer_ode = torch.optim.Adam(ode_model.parameters(), lr=0.1)
-    num_epochs = 10000
+    num_epochs = args.num_epochs
     ode_loss_values = []
     S_loss_values = []
     I_loss_values = []
@@ -460,6 +463,7 @@ def main():
     train_pred = pd.DataFrame(train_pred)
     train_pred.columns = ['S_pred', 'I_pred', 'R_pred']
     train_pred['time'] = train_data.t.detach().numpy()
+    train_pred['time_original'] = train_one_city['time_original'].to_numpy()
     train_pred['S'] = S_train
     train_pred['I'] = I_train
     train_pred.to_parquet(full_write_loc + "_train_predictions.parquet")
@@ -470,6 +474,7 @@ def main():
     test_pred = pd.DataFrame(test_pred)
     test_pred.columns = ['S_pred', 'I_pred', 'R_pred']
     test_pred['time'] = test_data.t.detach().numpy()
+    test_pred['time_original'] = test_one_city['time_original'].to_numpy()
     test_pred['S'] = S_test
     test_pred['I'] = I_test
     test_pred.to_parquet(full_write_loc + "_test_predictions.parquet")

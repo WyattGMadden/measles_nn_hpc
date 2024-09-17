@@ -11,7 +11,8 @@ echo "Starting job: $job_name"
 eval "$(conda shell.bash hook)"
 conda activate finalmlenv
 
-job_indices=({1..10} {12..52..2})
+# job_indices=({1..10} {12..52..2})
+job_indices=(52)
 
 # Maximum number of concurrent jobs
 max_jobs=1
@@ -22,11 +23,10 @@ do
     echo "$(date "+%Y-%m-%d %H:%M:%S") - Running task index: $SLURM_ARRAY_TASK_ID" 
     python3 data_process_explain.py \
         --k=$SLURM_ARRAY_TASK_ID \
-        --save-data-loc="../../../../output/models/basic_nn_yearcutoff/" \
-        --susc-data-loc="../../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
-        --birth-data-loc="../../../../data/births/ewBu4464.csv" \
-        --test-size=0.251197 \
-        --verbose 
+        --t-lag=130 \
+        --save-data-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
+        --cases-data-loc="../../../../output/data/basic_nn/prefit/" \
+        --year-test-cutoff=61 \
     
     # Increment and manage job count
     ((current_jobs++))

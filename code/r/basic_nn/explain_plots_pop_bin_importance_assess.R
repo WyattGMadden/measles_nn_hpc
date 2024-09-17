@@ -16,7 +16,7 @@ all_cities <- read_csv("../../../output/data/basic_nn/all_cases_from_max_gh.csv"
 tsir_dat <- read_csv("../../../output/data/basic_nn/tsir_preds_processed.csv")
 
 #neural net predictions
-nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/basic_nn_preds.csv")
+nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff_optimal/basic_nn_preds.csv")
 
 coords <- read_csv("https://raw.githubusercontent.com/msylau/measles_competing_risks/master/data/formatted/prevac/coordinates_urban.csv") |>
     t() 
@@ -50,7 +50,7 @@ nbc <- read_csv("../../../output/data/basic_nn/nearest_big_city.csv") |>
 ###explainability###
 ####################
 
-read_dir <- "../../../output/data/basic_nn_yearcutoff/explain/"
+read_dir <- "../../../output/data/basic_nn_yearcutoff_optimal/explain/"
 
 
 read_in_cap <- function(x) {

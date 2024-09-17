@@ -1,8 +1,8 @@
 import argparse
 import sys
-sys.path.insert(0, '../')
-import data_load as mdl
-sys.path.insert(0, 'explain/')
+sys.path.insert(0, '../../data_processing/')
+import prevac_measles_data_loader as mdl
+sys.path.insert(0, '../basic_nn/explain/')
 
 
 import numpy as np
@@ -10,7 +10,7 @@ import pandas as pd
 
 
 
-def process_data(cases, test_size):
+def process_data(cases, year_test_cutoff):
 
     cases['cases'] = np.log(cases['cases'] + 1)
     cases_groups = cases.groupby(['city'])
@@ -21,8 +21,9 @@ def process_data(cases, test_size):
 
     cases['cases'] = (cases['cases'] - cases_mean['cases']) / cases_std['cases']
 
-    cases_train = cases[cases['time'] <= cases['time'].quantile(1 - test_size)]
-    cases_test = cases[cases['time'] > cases['time'].quantile(1 - test_size)]
+    cases['year'] = cases['time'].apply(lambda x: int(x))
+    cases_train = cases[cases['year'] < year_test_cutoff]
+    cases_test = cases[cases['year'] >= year_test_cutoff]
 
     id_train = cases_train[['time', 'city']]
     id_test = cases_test[['time', 'city']]
@@ -34,7 +35,7 @@ def process_data(cases, test_size):
 
     #X_train = train_df[abl_cols]
     X_train = cases_train
-    X_train = X_train.drop(['time', 'city', 'cases', 'births', 'susc', 'pop'], axis = 1)
+    X_train = X_train.drop(['time', 'year', 'city', 'cases', 'cases_trans', 'births', 'susc', 'pop'], axis = 1)
     X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='nbc')))]
     X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='nearest_big_city')))]
     X_train = X_train[X_train.columns.drop(list(X_train.filter(regex='susc')))]
@@ -42,7 +43,7 @@ def process_data(cases, test_size):
 
     #X_test = test_df[abl_cols]
     X_test = cases_test
-    X_test = X_test.drop(['time', 'city', 'cases', 'births', 'susc', 'pop'], axis = 1)
+    X_test = X_test.drop(['time', 'year', 'city', 'cases', 'cases_trans', 'births', 'susc', 'pop'], axis = 1)
     X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='nbc')))]
     X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='nearest_big_city')))]
     X_test = X_test[X_test.columns.drop(list(X_test.filter(regex='susc')))]
@@ -59,31 +60,26 @@ def main():
     parser = argparse.ArgumentParser(description='Basic NN')
     parser.add_argument('--k', type=int, default=52,
                         help='step ahead prediction')
-    parser.add_argument('--test-size', type=float, default=0.3,
-                        help='proportion of data for test')
-    parser.add_argument('--save-data-loc', type=str, default=".",
+    parser.add_argument('--t-lag', type=int, default=130,
+                        help='time lag features')
+    parser.add_argument('--year-test-cutoff', type=int, default=61,
+                        help='Year to split train and test data')
+    parser.add_argument('--save-data-loc', type=str, default="./",
                         help='location to save output')
-    parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv",
-                        help='location of data')
-    parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv",
-                        help='location of data')
-    parser.add_argument('--top-12-cities', action='store_true', default=False,
-                        help='print info')
-    parser.add_argument('--verbose', action='store_true', default=False,
-                        help='print info')
+    parser.add_argument('--cases-data-loc', 
+                        type=str, 
+                        default="../../../../output/data/basic_nn/prefit/",
+                        help='location of cases data')
 
     args = parser.parse_args()
 
 
     
-    cases, cases_transform_output = mdl.create_measles_data(k = args.k,
-                                    t_lag = 130,
-                                    susc_data_loc = args.susc_data_loc,
-                                    birth_data_loc = args.birth_data_loc,
-                                    top_12_cities = args.top_12_cities,
-                                    verbose = args.verbose)
+    #read gzip parquett
+    cases = pd.read_parquet(args.cases_data_loc + "k" + str(args.k) + "_tlag" + str(args.t_lag) + ".gzip")
 
-    X_train, y_train, X_test, y_test, id_train, id_test  = process_data(cases, args.test_size)
+
+    X_train, y_train, X_test, y_test, id_train, id_test = process_data(cases, args.year_test_cutoff)
 
     #write to parquet
     X_train.to_parquet(args.save_data_loc + str(args.k) + "_X_train.parquet")

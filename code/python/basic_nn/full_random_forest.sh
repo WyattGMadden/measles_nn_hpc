@@ -32,7 +32,7 @@ do
         --coords-data-loc="../../../data/data_from_measles_competing_risks/coordinates_urban.csv" \
         --susc-data-loc="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
         --birth-data-loc="../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
-        --test-size=0.251197 \
+        --year-test-cutoff=61 \
         --verbose &
     
     # Increment and manage job count

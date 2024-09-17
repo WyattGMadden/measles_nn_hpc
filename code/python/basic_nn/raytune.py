@@ -27,17 +27,9 @@ def train_with_tuning(config):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # Load and process data
-    cases, transform_data = mdl.create_measles_data(
-        k=config['k'], 
-        t_lag=config['t_lag'], 
-        cases_data_loc=config['cases_data_loc'], 
-        pop_data_loc=config['pop_data_loc'], 
-        coords_data_loc=config['coords_data_loc'], 
-        susc_data_loc=config['susc_data_loc'], 
-        birth_data_loc=config['birth_data_loc'], 
-        top_12_cities=config['top_12_cities'], 
-        verbose=config['verbose']
-    )
+    full_cases_loc = config['cases_data_loc'] + "/k" + str(config['k']) + "_tlag" + str(config['t_lag']) + ".gzip"
+    cases = pd.read_parquet(full_cases_loc)
+
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, config['year_test_cutoff'])
     
     # Define model with the specified number of hidden layers
@@ -63,8 +55,8 @@ def train_with_tuning(config):
 def main():
     parser = argparse.ArgumentParser(description='Tune Neural Network Hyperparameters')
     parser.add_argument('--k', type=int, default=1, help='k-steps ahead')
-    parser.add_argument('--num-samples', type=int, default=20, help='Number of tuning samples')
-    parser.add_argument('--max-num-epochs', type=int, default=20, help='Maximum number of epochs')
+    parser.add_argument('--num-samples', type=int, default=10, help='Number of tuning samples')
+    parser.add_argument('--max-num-epochs', type=int, default=10, help='Maximum number of epochs')
     parser.add_argument('--gpus-per-trial', type=float, default=1, help='GPUs per trial')
     args = parser.parse_args()
 
@@ -79,11 +71,7 @@ def main():
     # Configuration for hyperparameter tuning
     config = {
         "k": args.k,
-        "cases_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv"),
-        "pop_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv"),
-        "coords_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/coordinates_urban.csv"),
-        "susc_data_loc": os.path.abspath("../../../output/data/tsir_susceptibles/tsir_susceptibles.csv"),
-        "birth_data_loc": os.path.abspath("../../../data/data_from_measles_competing_risks/ewBu4464.csv"),
+        "cases_data_loc": os.path.abspath("../../../output/data/prefit_cases"),
         "top_12_cities": False,
         "verbose": True,
         "year_test_cutoff": 61,

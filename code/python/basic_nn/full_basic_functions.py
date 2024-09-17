@@ -58,11 +58,11 @@ def process_data(cases, year_test_cutoff):
     id_test = cases_test[['time', 'city']]
 
     # Prepare target variables for training and test sets
-    y_train = cases_train['cases'].to_numpy().reshape((-1, 1))
-    y_test = cases_test['cases'].to_numpy().reshape((-1, 1))
+    y_train = cases_train['cases_trans'].to_numpy().reshape((-1, 1))
+    y_test = cases_test['cases_trans'].to_numpy().reshape((-1, 1))
 
     # Prepare feature matrices for training and test sets, dropping specific columns and filtering by regex
-    drop_columns = ['time', 'city', 'cases', 'susc', 'pop', 'births', 'year']
+    drop_columns = ['time', 'city', 'cases', 'cases_trans', 'susc', 'pop', 'births', 'year']
     regex_filters = ['nbc', 'nearest_big_city', 'susc']
 
     X_train = cases_train.drop(columns=drop_columns)

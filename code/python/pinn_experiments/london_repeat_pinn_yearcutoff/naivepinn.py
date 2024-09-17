@@ -36,8 +36,7 @@ def process(data, time_unit = 365):
 def get_data(data):
     #select multiple columns from data
     case_cols = [col for col in data.columns if "cases_lag_" in col]
-    susc_cols = [col for col in data.columns if "susc_lag_" in col]
-    return data[["time", "susc", "cases", "births", "pop"] + case_cols + susc_cols]
+    return data[["time", "susc", "cases", "births", "pop"] + case_cols]
                  
 
 
@@ -126,28 +125,30 @@ def seasonal_beta_torch(t, vert, amp1, amp2, T):
 
 
 class derivative_layer(nn.Module):
-    def __init__(self, T):
+    def __init__(self, T, num_t):
         super().__init__()
         self.T = T
         self.vert = nn.Parameter(torch.randn(1))
         self.amp1 = nn.Parameter(torch.randn(1))
         self.amp2 = nn.Parameter(torch.randn(1))
+        self.S_latent = nn.Parameter(torch.randn(num_t))
+
 
 
     def forward(self, t, SI, Bi, N):
-        S = SI[:, 0:1]
+        #S = torch.index_select(SI, 1, torch.tensor([0]))
+        S_lat = torch.exp(self.S_latent[(t.long() - 1)] + 4.5) * 1e3
         I = SI[:, 1:2]
-        #beta = seasonal_beta_torch(t, self.beta0, self.beta1, self.T)
         beta = seasonal_beta_torch(t, self.vert, self.amp1, self.amp2, self.T)
-        der_S = Bi - ((beta) * S * I) / N
-        der_I = ((beta) * S * I) / N - (1) * I
+        der_S = Bi - ((beta) * S_lat * I) / N
+        der_I = ((beta) * S_lat * I) / N - (1) * I
         der_SI = torch.cat((der_S, der_I), 1)
         return der_SI
 
 class ode_nn(nn.Module):
-    def __init__(self, input_dim,  output_dim, T):
+    def __init__(self, input_dim,  output_dim, T, num_t):
         super(ode_nn, self).__init__()
-        self.der = derivative_layer(T)
+        self.der = derivative_layer(T, num_t)
     def forward(self, t, SI, Bi, N):
         x = self.der(t, SI, Bi, N)
         return x          
@@ -187,6 +188,7 @@ def get_B(num_features = 50, scale = 1):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-num", type=int, default=1, help="step ahead prediction")
     parser.add_argument("--k", type=int, default=52, help="step ahead prediction")
     parser.add_argument("--tlag", type=int, default=130, help="number of lags in features")
     parser.add_argument("--year-test-cutoff", type=int, default=61, help="train/test year cutoff")
@@ -205,7 +207,6 @@ def main():
     np.random.seed(42)
 
     train_df, test_df = readin_data(k = args.k, tlag = args.tlag, year_test_cutoff = args.year_test_cutoff)
-
     which_city = [args.city]
     train_one_city = get_cities(train_df, which_city)
     test_one_city = get_cities(test_df, which_city)
@@ -248,9 +249,12 @@ def main():
                           output_dim = output_dim,
                           B = B).to(device)
 
+
     ode_model = ode_nn(input_dim = 3, 
                        output_dim = 3,
-                       T = 26).to(device)
+                       T = 26,
+                       num_t = t_train.shape[0]).to(device)
+
     loss_fn = nn.L1Loss()
 
     optimizer = torch.optim.Adam(model.parameters(), 
@@ -267,6 +271,7 @@ def main():
     vert_params = []
     amp1_params = []
     amp2_params = []
+    S_lat_params = []
     S_grad_values_all = []
     I_grad_values_all = []
 
@@ -337,14 +342,19 @@ def main():
             der_I = der[:, 1:2]
 
 
+            #get latent parameters for this batch of data
+            S_latent_batch = list(ode_model.parameters())[3][t.long() - 1]
 
-            loss_S = loss_fn(S_pred, S)
+
+
+
+            loss_S = loss_fn(S_pred, S_latent_batch)
             loss_I = loss_fn(I_pred, I)
 
             loss_grad_S = loss_fn(der_S, grad_for_loss_S)
             loss_grad_I = loss_fn(der_I, grad_for_loss_I)
 
-            loss_ode = (loss_grad_S + loss_grad_I)
+            loss_ode = loss_grad_S + loss_grad_I
 
 
             loss = loss_S * S_hp + loss_I * I_hp  + loss_ode * ode_hp
@@ -385,6 +395,11 @@ def main():
         print(amp2_params[i])
         print("\n")
         print("\n")
+        print("S_lat:")
+        S_lat_params.append(params_all[3].to("cpu").detach().numpy().flatten())
+        print(S_lat_params[i])
+        print("\n")
+        print("\n")
         S_grad_values_all.append(np.concatenate(S_grad_values))
         I_grad_values_all.append(np.concatenate(I_grad_values))
         with torch.no_grad():
@@ -408,8 +423,8 @@ def main():
 
 
 
-    loc_name = "tsirpinn"
-    full_write_loc = args.write_loc + loc_name + "_k" + str(args.k) + "_tlag" + str(args.tlag) + "_city" + str(args.city)
+    loc_name = "naivepinn"
+    full_write_loc = args.write_loc + loc_name + "_k" + str(args.k) + "_tlag" + str(args.tlag) + "_city" + args.city + "_run_" + str(args.run_num)
 
     torch.save(model.state_dict(), 
                full_write_loc + "_feature_model.pt")
@@ -427,6 +442,13 @@ def main():
     df['vert'] = vert_params
     df['amp1'] = amp1_params
     df['amp2'] = amp2_params
+
+    S_lat_params = pd.DataFrame(S_lat_params)
+    #add "S" to front  of column names
+    S_lat_params.columns = ['S_' + str(col) for col in S_lat_params.columns]
+
+    #concatenate pd data frames by column
+    df = pd.concat([df, S_lat_params], axis=1)
 
     #add "beta" to all column names
     #add dfbeta to df

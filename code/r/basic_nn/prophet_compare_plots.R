@@ -19,7 +19,7 @@ nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/basic_nn_preds.csv"
 #prboost predictions
 pr_dat <- list.files("../../../output/data/prophet/", pattern = "city", full.names = T) |>
     lapply(read_csv) |>
-    bind_rows(pr_dat) |>
+    bind_rows() |>
     filter(!is.na(time)) |>
     mutate(pr = prophet_pred,
            time = time + 1900)

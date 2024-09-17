@@ -49,22 +49,22 @@ def create_measles_data(
                          id_vars = 'time',
                          var_name = 'city',
                          value_name = 'cases')
-    cases_long['cases'] = np.log(cases_long['cases'] + 1)
+    cases_long['cases_trans'] = np.log(cases_long['cases'] + 1)
 
     cases_groups = cases_long.groupby(['city'])
     cases_mean, cases_std = cases_groups.transform("mean"), cases_groups.transform("std")
-    cases_long['cases'] = (cases_long['cases'] - cases_mean['cases']) / cases_std['cases']
+    cases_long['cases_trans'] = (cases_long['cases_trans'] - cases_mean['cases_trans']) / cases_std['cases_trans']
 
     cases_transform_output = cases_long[['time', 'city']].copy()
-    cases_transform_output['cases_mean'] = cases_mean['cases']
-    cases_transform_output['cases_std'] = cases_std['cases']
+    cases_transform_output['cases_mean'] = cases_mean['cases_trans']
+    cases_transform_output['cases_std'] = cases_std['cases_trans']
 
     # Create a list to hold the temporary DataFrames
     temp_dfs = []
 
     # Iterate and create lagged DataFrames
     for i in range(k, t_lag + 1):
-        lag_df = cases_long.groupby('city')['cases'].shift(i)
+        lag_df = cases_long.groupby('city')['cases_trans'].shift(i)
         lag_df.name = "cases_lag_" + str(i)
         temp_dfs.append(lag_df)
 
@@ -326,7 +326,7 @@ def create_measles_data(
     
 
 def run_experiments():
-    k_values = [1, 4, 12, 20, 34, 52]
+    k_values = [52, 34, 20, 12, 4, 1]
     t_lag_values = [26, 52, 78, 104, 130]
 
     # Define file locations
@@ -335,7 +335,7 @@ def run_experiments():
     coords_data_loc = "../../../data/data_from_measles_competing_risks/coordinates_urban.csv"
     susc_data_loc = "../../../output/data/tsir_susceptibles/tsir_susceptibles.csv"
     birth_data_loc = "../../../data/data_from_measles_competing_risks/ewBu4464.csv"
-    output_directory = "../../../output/data/basic_nn/prefit/"
+    output_directory = "../../../output/data/prefit_cases/"
 
     # Iterate over all combinations of k and t_lag
     for k in k_values:

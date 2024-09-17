@@ -19,6 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description='XGBoost Regression')
     parser.add_argument('--n-estimators', type=int, default=100, help='number of trees in the forest (default: 100)')
     parser.add_argument('--k', type=int, default=52, help='step ahead prediction')
+    parser.add_argument('--year-test-cutoff', type=int, default=61, help='Year cutoff for test/train datasets.')
     parser.add_argument('--test-size', type=float, default=0.3, help='proportion of data for test')
     parser.add_argument('--save-data-loc', type=str, default=".", help='location to save output')
     parser.add_argument('--cases-data-loc', type=str, default=".",
@@ -48,7 +49,7 @@ def main():
                                                     birth_data_loc=args.birth_data_loc,
                                                     top_12_cities=args.top_12_cities,
                                                     verbose=args.verbose)
-    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.test_size)
+    train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases, args.year_test_cutoff)
 
     model = xgb.XGBRegressor(
             n_estimators=args.n_estimators,

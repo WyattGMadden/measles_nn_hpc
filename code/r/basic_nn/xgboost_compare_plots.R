@@ -65,7 +65,7 @@ prmse <- full_dat %>%
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
 ggplot2::ggsave(paste0(save_dir, "rmse_nn_xg_facet.png"),
-                prmse, width = 3, height = 4, dpi = 600)
+                prmse, width = 3 * 1.75, height = 4 * 1.75, dpi = 600)
 
 
 #xg rmse by k

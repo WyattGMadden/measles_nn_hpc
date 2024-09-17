@@ -187,6 +187,7 @@ def get_B(num_features = 50, scale = 1):
 def main():
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-num", type=int, default=1, help="step ahead prediction")
     parser.add_argument("--k", type=int, default=52, help="step ahead prediction")
     parser.add_argument("--tlag", type=int, default=130, help="number of lags in features")
     parser.add_argument("--year-test-cutoff", type=int, default=61, help="train/test year cutoff")
@@ -409,7 +410,7 @@ def main():
 
 
     loc_name = "tsirpinn"
-    full_write_loc = args.write_loc + loc_name + "_k" + str(args.k) + "_tlag" + str(args.tlag) + "_city" + str(args.city)
+    full_write_loc = args.write_loc + loc_name + "_k" + str(args.k) + "_tlag" + str(args.tlag) + "_city" + args.city + "_run_" + str(args.run_num)
 
     torch.save(model.state_dict(), 
                full_write_loc + "_feature_model.pt")

@@ -3,6 +3,7 @@ library(patchwork)
 theme_set(theme_classic())
 set.seed(42)
 save_dir <- "../../../output/figures/"
+save_dir <- "~/resubmission_nn_temp/"
 read_dir <- "../../../data/"
 
 #all original cases/birth/etc data from max's github
@@ -14,7 +15,7 @@ tsir_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/tsir_preds_proces
     filter(!is.na(time))
 
 #neural net predictions
-nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/basic_nn_preds.csv")
+nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff_optimal/basic_nn_preds.csv")
 
 
 full_dat_temp <- nn_dat[, c("time", "nn", "city", "k", "cases_mean", "cases_std", "nn_orig", "train_test")] %>% 
@@ -80,7 +81,7 @@ prmse <- full_dat %>%
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
 ggplot2::ggsave(paste0(save_dir, "rmse_nn_tsir_facet.png"),
-                prmse, width = 3, height = 4, dpi = 600)
+                prmse, width = 3*1.75, height = 4*1.75, dpi = 600)
 
 
 #like above but rmse gain

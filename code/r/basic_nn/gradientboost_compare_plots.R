@@ -14,7 +14,7 @@ tsir_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/tsir_preds_proces
     filter(!is.na(time))
 
 #neural net predictions
-nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/basic_nn_preds.csv")
+nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff_optimal/basic_nn_preds.csv")
 
 #gbboost predictions
 gb_dat <- read_csv("../../../output/data/gradientboost/gradientboost_preds.csv")
@@ -65,7 +65,7 @@ prmse <- full_dat %>%
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
 ggplot2::ggsave(paste0(save_dir, "rmse_nn_gb_facet.png"),
-                prmse, width = 3, height = 4, dpi = 600)
+                prmse, width = 3 * 1.75, height = 4 * 1.75, dpi = 600)
 
 
 #gb rmse by k

@@ -11,12 +11,17 @@ source activate $ENV_NAME
 SCRIPT_DIR=$(pwd)
 
 # Define the values for k and tlag
-k_values=(1 4 12 20 34 52)
-tlag_values=(26 52 78 104 130)
-cities=("London" "Birmingham" "Manchester" "Liverpool")
+#k_values=(1 4 12 20 34 52)
+#k_values=(52 34 20 12 4 1)
+k_values=(52)
+#tlag_values=(26 52 78 104 130)
+tlag_values=(130 104 78 52 26)
+#tlag_values=(130)
+#cities=("London" "Manchester" "Birmingham" "Liverpool")
+cities=("Manchester" "Birmingham" "Liverpool")
 
 # Directory to save outputs
-write_loc="../../../../output/models/pinn_experiments/final_onecity_pinn_yearcutoff"
+write_loc="../../../../output/models/pinn_experiments/final_onecity_pinn_yearcutoff/"
 
 # Maximum number of concurrent jobs
 MAX_JOBS=4
@@ -29,12 +34,12 @@ for city in "${cities[@]}"; do
             if [ "$k" -lt "$tlag" ]; then  # Only run scripts if k is less than tlag
                 # Run naivepinn.py
                 echo "Running naivepinn.py for city=$city, k=$k and tlag=$tlag"
-                python3 "$SCRIPT_DIR/naivepinn.py" --city "$city" --k $k --tlag $tlag --write-loc "$write_loc" --year-test-cutoff 61 &
+                python3 "$SCRIPT_DIR/naivepinn.py" --city "$city" --k $k --tlag $tlag --write-loc "$write_loc" --year-test-cutoff 61 --num-epochs 2000 --wd-fnn 0.025 &
                 current_jobs=$((current_jobs+1))
 
                 # Run tsirpinn.py
                 echo "Running tsirpinn.py for city=$city, k=$k and tlag=$tlag"
-                python3 "$SCRIPT_DIR/tsirpinn.py" --city "$city" --k $k --tlag $tlag --write-loc "$write_loc" --year-test-cutoff 61 &
+                python3 "$SCRIPT_DIR/tsirpinn.py" --city "$city" --k $k --tlag $tlag --write-loc "$write_loc" --year-test-cutoff 61 --num-epochs 2000 --wd-fnn 0.025 &
                 current_jobs=$((current_jobs+1))
 
                 # Check if we need to wait for jobs to finish

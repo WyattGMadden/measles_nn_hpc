@@ -23,11 +23,16 @@ current_jobs=0
 for SLURM_ARRAY_TASK_ID in "${job_indices[@]}"
 do
     echo "$(date "+%Y-%m-%d %H:%M:%S") - Running task index: $SLURM_ARRAY_TASK_ID" 
-    python3 basic_nn_explain_sep_high_pop_groups.py \
+    python3 basic_nn_explain.py \
         --k=$SLURM_ARRAY_TASK_ID \
-        --save-data-loc="../../../../output/data/basic_nn_yearcutoff/explain/" \
-        --susc-data-loc="../../../../data/tsir_susceptibles/tsir_susceptibles.csv" \
-        --birth-data-loc="../../../../data/births/ewBu4464.csv" \
+        --t-lag=130 \
+        --hidden-dim=721 \
+        --num-hidden-layers=2 \
+        --data-read-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
+        --write-data-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
+        --model-read-loc="../../../../output/models/basic_nn_yearcutoff_optimal/" \
+        --susc-data-loc="../../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
+        --birth-data-loc="../../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
         --verbose 
     
     # Increment and manage job count

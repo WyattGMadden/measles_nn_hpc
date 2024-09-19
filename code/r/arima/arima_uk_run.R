@@ -33,7 +33,6 @@ all_forecasts <- list()
 # Define the forecasting horizons
 
 # Fit auto.arima and make selected k-step ahead forecasts at each time step
-i = unique(all_cities$city)[1]
 for (i in unique(all_cities$city)) {
   print(paste("Fitting model for city", i))
   df_to_fit <- all_cities %>% 
@@ -44,7 +43,6 @@ for (i in unique(all_cities$city)) {
 
   tlag <- 130  # Time lag (window size for the rolling forecast)
   k <- 52
-  j = 200
 
   # Rolling forecast
   for (j in seq(tlag, nrow(df_to_fit) - k)) {
@@ -59,7 +57,7 @@ for (i in unique(all_cities$city)) {
     forecast_frame <- tibble(
         time = df_to_fit$time[(j + 1):(j + k)],
         k = 1:k,
-        prophet_pred = aa_pred,
+        auto_arima = aa_pred,
         city = city_temp
     )
   all_forecasts[[length(all_forecasts) + 1]] <- forecast_frame

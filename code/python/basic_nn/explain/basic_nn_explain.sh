@@ -28,9 +28,9 @@ do
         --t-lag=130 \
         --hidden-dim=721 \
         --num-hidden-layers=2 \
-        --data-read-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
-        --write-data-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
-        --model-read-loc="../../../../output/models/basic_nn_yearcutoff_optimal/" \
+        --data-read-loc="../../../../output/data/basic_nn_optimal/explain/" \
+        --write-data-loc="../../../../output/data/basic_nn_optimal/explain/" \
+        --model-read-loc="../../../../output/models/basic_nn_optimal/" \
         --susc-data-loc="../../../../output/data/tsir_susceptibles/tsir_susceptibles.csv" \
         --birth-data-loc="../../../../data/data_from_measles_competing_risks/ewBu4464.csv" \
         --verbose 

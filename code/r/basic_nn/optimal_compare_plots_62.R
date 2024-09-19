@@ -14,7 +14,7 @@ tsir_dat <- read_csv("../../../output/data/basic_nn_optimal/tsir_preds_processed
     filter(!is.na(time))
 
 #neural net predictions
-nn_dat <- read_csv("../../../output/data/basic_nn_optimal/basic_nn_preds.csv")
+nn_dat <- read_csv("../../../output/data/basic_nn_optimal_62/basic_nn_preds.csv")
 
 
 full_dat_temp <- nn_dat[, c("time", "nn", "city", "k", "cases_mean", "cases_std", "nn_orig", "train_test")] %>% 
@@ -58,7 +58,7 @@ prmse <- full_dat %>%
     scale_y_continuous(breaks = seq(0, 1.5, 0.5), limits = c(0, 2)) +
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
-ggplot2::ggsave(paste0(save_dir, "rmse_nn_tsir_facet.png"),
+ggplot2::ggsave(paste0(save_dir, "rmse_nn_tsir_facet_62.png"),
                 prmse, width = 3*1.75, height = 4*1.75, dpi = 600)
 
 
@@ -103,7 +103,7 @@ figrmseall <- prmse / guide_area() / prmsegain +
     plot_annotation(tag_levels = 'A')
 
 scale_factor <- 2
-ggsave(paste0(save_dir, "rmse_reg_and_gain_nn_tsir_k_facet.png"),
+ggsave(paste0(save_dir, "rmse_reg_and_gain_nn_tsir_k_facet_62.png"),
        figrmseall, 
        width = 3 * scale_factor,
        height = 4 * scale_factor,

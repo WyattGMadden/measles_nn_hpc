@@ -1,5 +1,8 @@
 import argparse
-import data_load as mdl
+import sys
+
+sys.path.append('../data_processing/')
+import prevac_measles_data_loader as mdl
 
 import torch
 from torch import nn
@@ -8,6 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import full_basic_functions as fbf
 
@@ -19,19 +23,21 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--k', type=int, default=1,
                         help='step ahead prediction')
-    parser.add_argument('--test-size', type=float, default=(1 - (48.5-46)/(65-46)),
+    parser.add_argument('--year-test-cutoff', type=float, default=48.5,
                         help='proportion of data for test')
     parser.add_argument('--save-data-loc', type=str, default="../../../output/models/basic_nn_bif/",
                         help='location to save output')
-    parser.add_argument('--cases-data-loc', type=str, default=".",
+    parser.add_argument('--cases-data-loc', 
+                        type=str, 
+                        default="../../../data/data_from_measles_competing_risks/inferred_cases_urban.csv",
                         help='location of data')
-    parser.add_argument('--pop-data-loc', type=str, default=".",
+    parser.add_argument('--pop-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/inferred_pop_urban.csv",
                         help='location of data')
-    parser.add_argument('--coords-data-loc', type=str, default=".",
+    parser.add_argument('--coords-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/coordinates_urban.csv",
                         help='location of data')
-    parser.add_argument('--susc-data-loc', type=str, default="../../../data/tsir_susceptibles/tsir_susceptibles.csv",
+    parser.add_argument('--susc-data-loc', type=str, default="../../../output/data/tsir_susceptibles/tsir_susceptibles.csv",
                         help='location of data')
-    parser.add_argument('--birth-data-loc', type=str, default="../../../data/births/ewBu4464.csv",
+    parser.add_argument('--birth-data-loc', type=str, default="../../../data/data_from_measles_competing_risks/ewBu4464.csv",
                         help='location of data')
     parser.add_argument('--current-births', action='store_true', default=False,
                         help='Include current births in features, violating data leakage')
@@ -80,7 +86,7 @@ def main():
                                                     current_births = args.current_births)
 
     train_data, test_data, num_features, id_train, id_test = fbf.process_data(cases,
-                                                                              args.test_size)
+                                                                              args.year_test_cutoff)
     train_dataloader, test_dataloader = fbf.get_dataloaders(train_data = train_data,
                                                             test_data = test_data,
                                                             batch_size = 64)
@@ -89,7 +95,7 @@ def main():
     input_dim = num_features
     hidden_dim = int(np.floor((num_features + 1) * 2 / 3))
     output_dim = 1
-    model = fbf.NeuralNetwork(input_dim, hidden_dim, output_dim).to(device)
+    model = fbf.NeuralNetwork(input_dim, hidden_dim, output_dim, num_hidden_layers = 3).to(device)
 
     loss_fn = nn.MSELoss()
 
@@ -97,7 +103,7 @@ def main():
 
 
     for epoch in range(1, args.num_epochs + 1):
-        fbf.train(args, model, device, train_dataloader, optimizer, loss_fn, epoch)
+        fbf.train(model, device, train_dataloader, optimizer, loss_fn, epoch, log_interval = 1000)
         fbf.test(model, device, test_dataloader, loss_fn)
 
 

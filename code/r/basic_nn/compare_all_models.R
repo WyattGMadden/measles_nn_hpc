@@ -2,7 +2,7 @@ library(tidyverse)
 library(patchwork)
 theme_set(theme_classic())
 set.seed(42)
-save_dir <- "~/resubmission_nn_temp/"
+save_dir <- "../../../output/figures/basic_nn_optimal/"
 read_dir <- "../../../data/"
 
 #all original cases/birth/etc data from max's github
@@ -14,7 +14,7 @@ tsir_dat <- read_csv("../../../output/data/basic_nn_yearcutoff/tsir_preds_proces
     filter(!is.na(time))
 
 #neural net predictions
-nn_dat <- read_csv("../../../output/data/basic_nn_yearcutoff_optimal/basic_nn_preds.csv")
+nn_dat <- read_csv("../../../output/data/basic_nn_optimal/basic_nn_preds.csv")
 
 #rf predictions
 rf100_dat <- read_csv("../../../output/data/random_forest_100/random_forest_preds.csv")
@@ -27,21 +27,6 @@ xg_dat <- read_csv("../../../output/data/xgboost_100/xg_preds.csv")
 
 #auto.arima predictions
 arima_dat <- read_csv("../../../output/data/autoarima/autoarima_uk_processed.csv")
-
-
-pr_dat |>
-    group_by(city, k) |>
-    count()
-
-pr_dat |>
-    filter(city == "Aberaeron.RD",
-           k == 52,
-           time == 1963.00)
-
-arima_dat |>
-    filter(city == "Aberaeron.RD",
-           k == 52,
-           time == 1963.00)
 
 pr_dat <- list.files("../../../output/data/prophet/", pattern = "city", full.names = T) |>
     lapply(read_csv) |>
@@ -80,7 +65,21 @@ prmse <- full_dat %>%
            aa_standardized = (log(auto_arima + 1) - mean(log(cases + 1))) / sd(log(cases + 1)),
            pr_standardized = (log(pr + 1) - mean(log(cases + 1))) / sd(log(cases + 1)),
            tsir_standardized = (log(tsir + 1) - mean(log(cases + 1))) / sd(log(cases + 1)),
-           cases_standardized = (log(cases + 1) - mean(log(cases + 1))) / sd(log(cases + 1))) %>% 
+           cases_standardized = (log(cases + 1) - mean(log(cases + 1))) / sd(log(cases + 1)))
+    
+k_by_mod_table <- prmse |>
+    ungroup() |>
+    group_by(k) |>
+    summarize(tsir_rmse = sqrt(mean((cases_standardized - tsir_standardized) ^ 2, na.rm = T)), 
+              rf100_rmse = sqrt(mean((cases_standardized - rf100_standardized) ^ 2, na.rm = T)), 
+              gb_rmse = sqrt(mean((cases_standardized - gb_standardized) ^ 2, na.rm = T)), 
+              xg_rmse = sqrt(mean((cases_standardized - xg_standardized) ^ 2, na.rm = T)), 
+              aa_rmse = sqrt(mean((cases_standardized - aa_standardized) ^ 2, na.rm = T)), 
+              pr_rmse = sqrt(mean((cases_standardized - pr_standardized) ^ 2, na.rm = T)), 
+              nn_rmse = sqrt(mean((cases_standardized - nn_standardized) ^ 2, na.rm = T)))
+
+
+prmse_summ <- prmse |>
     summarize(min_pop = unique(min_pop),
               tsir_rmse = sqrt(mean((cases_standardized - tsir_standardized) ^ 2, na.rm = T)), 
               rf100_rmse = sqrt(mean((cases_standardized - rf100_standardized) ^ 2, na.rm = T)), 
@@ -90,16 +89,20 @@ prmse <- full_dat %>%
               pr_rmse = sqrt(mean((cases_standardized - pr_standardized) ^ 2, na.rm = T)), 
               nn_rmse = sqrt(mean((cases_standardized - nn_standardized) ^ 2, na.rm = T)),
               case_sum = sum(cases))
-prmse |>
+write_csv(prmse_summ, paste0(save_dir, "rmse_over_models_by_k.csv"))
+all_mod_rmse <- prmse_summ |>
+    pivot_longer(cols = c(tsir_rmse, rf100_rmse, gb_rmse, xg_rmse, aa_rmse, pr_rmse), 
+                 names_to = "model", 
+                 values_to = "rmse") |>
     mutate(k = paste0("k = ", k), 
            k = factor(k, levels = paste0("k = ", k_corrmse))) %>% 
     ggplot() + 
-    geom_point(aes(x = rf100_rmse, y = nn_rmse, colour = log(min_pop)), 
+    geom_point(aes(x = rmse, y = nn_rmse, colour = log(min_pop)), 
                size = 0.1) +
     geom_abline(color = "black") + 
     cividis::scale_color_cividis(direction = -1) +
-    facet_wrap(~ k, ncol = 3) +
-    labs(x = expression(RMSE[rf100boost]),
+    facet_grid(model ~ k) +
+    labs(x = expression(RMSE[ComparisonModel]),
          y = expression(RMSE[SFNN]),
          colour = "Log(Population)") +
 #    theme(axis.text.x = element_text(angle = -90, vjust = 0.5)) +
@@ -107,67 +110,43 @@ prmse |>
     scale_y_continuous(breaks = seq(0, 1.5, 0.5), limits = c(0, 2)) +
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
-ggplot2::ggsave(paste0(save_dir, "rmse_nn_rf100_facet.png"),
-                prmse, width = 3 * 1.75, height = 4 * 1.75, dpi = 600)
+ggplot2::ggsave(paste0(save_dir, "rmse_all_models.png"),
+                all_mod_rmse, width = 8, height = 8, dpi = 600)
 
 
-#rf100 rmse by k
-rmse_by_k_over_models <- full_dat |>
-    group_by(k) |>
-    summarize(rf100_rmse = sqrt(mean((log(rf100 + 1) - log(cases + 1)) ^ 2, na.rm = T)),
-              nn_rmse = sqrt(mean((log(nn + 1) - log(cases + 1)) ^ 2, na.rm = T)),
-              tsir_rmse = sqrt(mean((log(tsir + 1) - log(cases + 1)) ^ 2, na.rm = T)))
 
-# save as csv
-write_csv(rmse_by_k_over_models, paste0(save_dir, "rf100_rmse_by_k_over_models.csv"))
 
-#like above but rmse gain
-prmsegain <- full_dat %>% 
-    filter(k %in% k_corrmse) %>%
-    group_by(city, k) %>% 
-    mutate(nn_standardized = (log(nn + 1) - mean(log(cases + 1))) / sd(log(cases + 1)), 
-           tsir_standardized = (log(tsir + 1) - mean(log(cases + 1))) / sd(log(cases + 1)),
-           cases_standardized = (log(cases + 1) - mean(log(cases + 1))) / sd(log(cases + 1))) %>% 
-    summarize(min_pop = unique(min_pop),
-              tsir_rmse = sqrt(mean((cases_standardized - tsir_standardized) ^ 2, na.rm = T)), 
-              nn_rmse = sqrt(mean((cases_standardized - nn_standardized) ^ 2, na.rm = T)),
-              case_sum = sum(cases)) %>% 
-    mutate(rmse_gain = tsir_rmse - nn_rmse,
-           k = paste0("k = ", k), 
+all_mod_k52_rmse <- prmse_summ |>
+    pivot_longer(cols = c(rf100_rmse, gb_rmse, aa_rmse, pr_rmse), 
+                 names_to = "model", 
+                 values_to = "rmse") |>
+    filter(k == 52) |>
+    mutate(model = case_when(model == "rf100_rmse" ~ "Random Forest",
+                             model == "gb_rmse" ~ "Gradient Boost",
+                             model == "aa_rmse" ~ "ARIMA",
+                             model == "pr_rmse" ~ "Prophet"),
+           k = paste0("k = ", 52), 
+           k = factor(k, levels = paste0("k = ", k_corrmse))) %>%
+    mutate(k = paste0("k = ", k), 
            k = factor(k, levels = paste0("k = ", k_corrmse))) %>% 
-    ggplot(aes(x = log(min_pop), y = rmse_gain)) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    geom_point(shape = 21,
-               size = 0.7, 
-               alpha = 0.2, 
-               fill = "black",
-               colour = "transparent") +
-    geom_smooth(colour = "blue3", linewidth = 0.5) +
+    ggplot() + 
+    geom_point(aes(x = rmse, y = nn_rmse, colour = log(min_pop)), 
+               size = 0.1) +
     geom_abline(color = "black") + 
     cividis::scale_color_cividis(direction = -1) +
-    facet_wrap(~ k, ncol = 3) +
-    labs(x = "Log(Population)",
-         y = expression(RMSE[TSIR] - RMSE[SFNN])) +
+    facet_wrap(~model, ncol = 2) +
+    labs(x = expression(RMSE[ComparisonModel]),
+         y = expression(RMSE[SFNN]),
+         colour = "Log(Population)") +
 #    theme(axis.text.x = element_text(angle = -90, vjust = 0.5)) +
-#    scale_x_continuous(breaks = seq(0.0, 1.5, 0.5), limits = c(0, 2)) +
-    scale_y_continuous(breaks = seq(0, 1.5, 0.5), limits = c(-1, 1)) +
+    scale_x_continuous(breaks = seq(0.0, 1.5, 0.5), limits = c(0, 2)) +
+    scale_y_continuous(breaks = seq(0, 1.5, 0.5), limits = c(0, 2)) +
     theme(panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
     theme(legend.position = "bottom")
-
-
-figrmseall <- prmse / guide_area() / prmsegain +
-    plot_layout(widths = c(1), 
-                heights = c(3, 0.5, 3),
-                guides = "collect") +
-    plot_annotation(tag_levels = 'A')
-
-scale_factor <- 2
-ggsave(paste0(save_dir, "rf100_rmse_reg_and_gain_nn_tsir_k_facet.png"),
-       figrmseall, 
-       width = 3 * scale_factor,
-       height = 4 * scale_factor,
-       dpi = 600)
+ggplot2::ggsave(paste0(save_dir, "rmse_all_models_k52.png"),
+                all_mod_k52_rmse, width = 5, height = 5, dpi = 600)
 
 
 
 
+save_dir <- "~/resubmission_nn_temp/"

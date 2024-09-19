@@ -148,8 +148,8 @@ tf_I_p <- test_preds |>
 tf_I_p
 ggplot2::ggsave("~/resubmission_nn_temp/pinn_ab_test_pred.png",
                 tf_I_p,
-                width = 6,
-                height = 8,
+                width = 8,
+                height = 6,
                 dpi = 600)
 
 unique(test_preds$k)
@@ -336,25 +336,23 @@ test_preds |>
     writeLines(file.path(save_dir, "mae_test.txt"))
     
 tsir_in_test |>
+    filter(k == "52") |>
+    filter(city == "London") |>
     group_by(model, k, city) |>
     summarize(mae_I = mean(abs(I_pred - I)),
               cor_I = cor(I_pred, I)) |>
-    filter(k == "52")
+    filter(k == "52") |>
+    write_csv("~/resubmission_nn_temp/tsir_test_mae_cor_k52_london.csv")
 
 temp <- test_preds |>
-    group_by(city, tlag, k, model) |>
-    summarize(mae_S = mean(abs(S_pred - S)),
-              mae_I = mean(abs(I_pred - I)),
-              cor_S = cor(S_pred, S),
+    group_by(model, run) |>
+    summarize(mae_I = mean(abs(I_pred - I)),
               cor_I = cor(I_pred, I)) |>
-    mutate(tlag = as.numeric(tlag),
-           k = as.numeric(k))
-print(temp, n=100)
+    group_by(model) |>
+    summarize(mean_mae_I = mean(mae_I),
+              sd_mae_I = sd(mae_I),
+              mean_cor_I = mean(cor_I),
+              sd_cor_I = sd(cor_I))
 temp |>
-    filter(city == "London") |>
-    filter(k == 52) |>
-    filter(tlag == 130) |>
-    ggplot(aes(x = model, y = mae_I, group = tlag)) +
-    facet_grid(k ~ .) +
-    geom_line()
+    write_csv("~/resubmission_nn_temp/pinn_test_mean_mae_cor_by_model_k52_london.csv")
 

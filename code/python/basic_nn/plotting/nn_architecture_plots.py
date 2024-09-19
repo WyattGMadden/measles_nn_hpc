@@ -50,6 +50,7 @@ def create_layer_output(name, num_nodes, label):
 input_nodes = create_layer_input('input', 7, 'Input Layer')
 hidden1_nodes = create_layer('hidden1', 6, 'Hidden Layer 1')
 hidden2_nodes = create_layer('hidden2', 6, 'Hidden Layer 2')
+hidden2_nodes = create_layer('hidden2', 6, 'Hidden Layer 3')
 output_nodes = create_layer_output('output', 1, 'Output Layer')
 
 # Function to add edges between layers

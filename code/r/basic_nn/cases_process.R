@@ -36,6 +36,6 @@ all_cities <- cases %>%
     ungroup()
 
 write.csv(all_cities, 
-          "../../../output/data/basic_nn/all_cases_from_max_gh.csv", 
+          "../../../output/data/basic_nn_optimal/all_cases_from_max_gh.csv", 
           row.names = F)
 

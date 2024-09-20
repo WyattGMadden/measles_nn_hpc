@@ -21,15 +21,5 @@ nn_dat <- list.files("../../../output/models/basic_nn_bif", full.names = T) %>%
            cases = exp(cases * cases_std + cases_mean) - 1)
 
 
-nn_dat |>
-    filter(city == "London")
-
-
-nn_trans_dat |>
-    filter(city == "London")
-
-
 
 write_csv(nn_dat, "../../../output/data/basic_nn_bif/basic_nn_bif_preds.csv")
-
-

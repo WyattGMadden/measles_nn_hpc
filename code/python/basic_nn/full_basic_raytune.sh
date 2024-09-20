@@ -5,8 +5,7 @@ eval "$(conda shell.bash hook)"
 conda activate finalmlenv
 
 # Define an array of 'k' values
-# k_values=(1 4 12 20 34 52)
-k_values=(52)
+k_values=(1 4 12 20 34 52)
 
 # Loop over each value of 'k' and run the Python script
 for k in "${k_values[@]}"; do

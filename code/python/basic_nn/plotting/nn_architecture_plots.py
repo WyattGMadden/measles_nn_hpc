@@ -50,7 +50,7 @@ def create_layer_output(name, num_nodes, label):
 input_nodes = create_layer_input('input', 7, 'Input Layer')
 hidden1_nodes = create_layer('hidden1', 6, 'Hidden Layer 1')
 hidden2_nodes = create_layer('hidden2', 6, 'Hidden Layer 2')
-hidden2_nodes = create_layer('hidden2', 6, 'Hidden Layer 3')
+hidden3_nodes = create_layer('hidden3', 6, 'Hidden Layer 3')
 output_nodes = create_layer_output('output', 1, 'Output Layer')
 
 # Function to add edges between layers
@@ -62,8 +62,9 @@ def add_edges(from_nodes, to_nodes):
 # Add edges between layers
 add_edges(input_nodes, hidden1_nodes)
 add_edges(hidden1_nodes, hidden2_nodes)
-add_edges(hidden2_nodes, output_nodes)
+add_edges(hidden2_nodes, hidden3_nodes)
+add_edges(hidden3_nodes, output_nodes)
 
 # Save the diagram to a file
-graph.write_png('../../../../output/figures/basic_nn/feedforward_network_structure.png')
+graph.write_png('../../../../output/figures/basic_nn_optimal/feedforward_network_structure.png')
 

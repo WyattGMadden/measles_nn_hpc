@@ -5,7 +5,7 @@ save_dir <- "../../../output/figures/"
 read_dir <- "../../../data/"
 
 #all original cases/birth/etc data from max's github
-all_cities <- read_csv("../../../output/data/basic_nn/all_cases_from_max_gh.csv")
+all_cities <- read_csv("../../../data/created/all_cases.csv")
 
 #neural net predictions
 nn_dat <- read_csv("../../../output/data/basic_nn_bif/basic_nn_bif_preds.csv")
@@ -52,7 +52,7 @@ pfacet <- full_dat %>%
          color = "",
          linetype = "")
 
-ggsave(paste0(save_dir, "nn_compare_london_k1to4", k_temp, "_nonlog.png"), 
+ggsave(paste0(save_dir, "nn_compare_london_k1to4_nonlog_bif.png"), 
        pfacet, width = 8, height = 4)
 
 

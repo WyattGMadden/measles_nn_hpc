@@ -24,8 +24,8 @@ do
     python3 data_process_explain.py \
         --k=$SLURM_ARRAY_TASK_ID \
         --t-lag=130 \
-        --save-data-loc="../../../../output/data/basic_nn_yearcutoff_optimal/explain/" \
-        --cases-data-loc="../../../../output/data/basic_nn/prefit/" \
+        --save-data-loc="../../../../output/data/basic_nn_optimal/explain/" \
+        --cases-data-loc="../../../../output/data/basic_nn_optimal/prefit/" \
         --year-test-cutoff=61 \
     
     # Increment and manage job count

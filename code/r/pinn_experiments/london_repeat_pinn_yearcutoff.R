@@ -2,7 +2,7 @@ library(tidyverse)
 library(patchwork)
 library(kableExtra)
 theme_set(theme_classic())
-save_dir <- "../../../output/figures"
+save_dir <- "../../../output/figures/"
 
 dirs <- list.files("../../../output/models/pinn_experiments/london_repeat_pinn_yearcutoff", full.names = TRUE)
 get_model_name <- function(text) {
@@ -61,10 +61,9 @@ S_params <- lapply(grep("_fit_info", dirs, value = TRUE),
 
 
 # tsir data
-tsir_preds <- read_csv("../../../output/data/basic_nn_yearcutoff_optimal/tsir_preds_processed.csv")
+tsir_preds <- read_csv("../../../output/data/basic_nn_optimal/tsir_preds_processed.csv")
 
 
-test_temp <- arrow::read_parquet("../../../output/models/pinn_experiments/final_onecity_pinn_yearcutoff/tsirpinn_k52_tlag130_cityLondon_test_predictions.parquet")
 test_preds <- lapply(grep("_test_predictions", dirs, value = TRUE),
                    function(x) {
                        dat <- arrow::read_parquet(x)
@@ -97,35 +96,8 @@ train_preds <- lapply(grep("_train_predictions", dirs, value = TRUE),
                           labels = c("Naive-PINN Model", "TSIR-PINN Model")))
 
 
-#read in obs data
-train_fit <- arrow::read_parquet("../../../output/models/pinn_experiments/final_london_pinn_yearcutoff/naivepinn_train_predictions.parquet")
 
-unique(test_preds$tlag)
-unique(test_preds$k)
-
-tf_I_p_train <- train_preds |>
-    filter(k == "52") |>
-    filter(city == "Birmingham") |>
-    pivot_longer(cols = c("I_pred", "I"),
-                 names_to = "pred_actual",
-                 values_to = "I") |>
-    mutate(time = (time - 1) / 26 + 1951,
-           pred_actual = case_when(pred_actual == "I_pred" ~ "Predicted Incidence", 
-                                   pred_actual == "I" ~ "Observed Incidence")) |>
-    ggplot(aes(x = time, y = I, color = pred_actual, linetype = pred_actual)) +
-    geom_line() +
-    facet_wrap(tlag~model, labeller = labeller(model = label_value), ncol = 1) +
-    scale_color_manual(values = c("Observed Incidence" = "black", 
-                                  "Predicted Incidence" = "blue3", 
-                                  "TSIR" = "yellow4")) +
-    theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-    theme(legend.position = "bottom") +
-    labs(x = "Year",
-         y = "Incidence",
-         color = "",
-         linetype = "")
-tf_I_p_train
-tf_I_p <- test_preds |>
+tf_I_p_all <- test_preds |>
     filter(k == "52",
            tlag == "104") |>
     filter(city == "London") |>
@@ -145,23 +117,46 @@ tf_I_p <- test_preds |>
          y = "Incidence",
          color = "",
          linetype = "")
-tf_I_p
-ggplot2::ggsave("~/resubmission_nn_temp/pinn_ab_test_pred.png",
+tf_I_p_all
+ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred_all_runs.png"),
                 tf_I_p,
                 width = 8,
                 height = 6,
                 dpi = 600)
 
-unique(test_preds$k)
+tf_I_p <- test_preds |>
+    filter(run == min(run)) |>
+    pivot_longer(cols = c("I_pred", "I"),
+                 names_to = "pred_actual",
+                 values_to = "I") |>
+    mutate(time = (time - 1) / 26 + 1951,
+           pred_actual = case_when(pred_actual == "I_pred" ~ "Predicted Incidence", 
+                                   pred_actual == "I" ~ "Observed Incidence")) |>
+    ggplot(aes(x = time, y = I, color = pred_actual, linetype = pred_actual)) +
+    geom_line() +
+    facet_wrap(~model, labeller = labeller(model = label_value), ncol = 1) +
+    scale_color_manual(values = c("Observed Incidence" = "black", 
+                                  "Predicted Incidence" = "blue3", 
+                                  "TSIR" = "yellow4")) +
+    theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
+    theme(legend.position = "bottom") +
+    labs(x = "Year",
+         y = "Incidence",
+         color = "",
+         linetype = "")
+tf_I_p
+ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred.png"),
+                tf_I_p,
+                width = 8,
+                height = 6,
+                dpi = 600)
+
 fit_info_p2 <- fit_info |>
-    filter(k == "52") |>
-#    filter(tlag == "130") |>
-    filter(city == "London") |>
-#    filter(tlag == "26") |>
+    filter(run == min(run)) |>
     pivot_longer(cols = c("vert", "amp1", "amp2"),
                  names_to = "param",
                  values_to = "value") |>
-    ggplot(aes(x = iter, y = value, color = run, linetype = param)) +
+    ggplot(aes(x = iter, y = value, color = param, linetype = param)) +
     geom_line() +
     scale_color_manual(values = c("vert" = "black", 
                                   "amp1" = "blue3", 
@@ -175,15 +170,27 @@ fit_info_p2 <- fit_info |>
                        labels = c("vert" = expression(nu), 
                                   "amp1" = expression(alpha[phantom(0) * 1]), 
                                   "amp2" = expression(alpha[phantom(0) * 2]))) +
-    facet_grid(tlag~model, labeller = labeller(model = label_value)) +
+    facet_wrap(~model, labeller = labeller(model = label_value), ncol = 1) +
     theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
     theme(legend.position = "bottom") +
     labs(x = "Epoch",
          y = "Parameter Value",
          color = "",
          linetype = "")
+fig2 <- tf_I_p / fit_info_p2 +
+    plot_layout(widths = c(1), 
+                heights = c(1, 1),
+                ncol = 1, 
+                nrow = 2) +
+    plot_annotation(tag_levels = 'A')
 
-unique(test_preds$k)
+scale_factor <- 3
+ggsave(file.path(save_dir, "pinn_ab_test_pred_seasonal_param_fit.png"),
+       fig2, 
+       width = 2.5 * scale_factor,
+       height = 3 * scale_factor,
+       dpi = 600)
+
 run_losses <- fit_info |>
     filter(k == "52") |>
 #    filter(tlag == "130") |>
@@ -199,72 +206,7 @@ run_losses <- fit_info |>
     labs(x = "Epoch",
          y = "Test I MAE",
          color = "Run")
-ggplot2::ggsave("~/resubmission_nn_temp/run_losses.png",
-                run_losses,
-                width = 8,
-                height = 6,
-                dpi = 600)
-unique(fit_info$model)
-fit_info |>
-    filter(iter == max(iter),
-           model == "TSIR-PINN Model") |>
-    pull(I_test_loss) |>
-    summary()
-fit_info |>
-    filter(iter == 2500) |>
-    filter(model == "TSIR-PINN Model") |>
-    pull(I_test_loss) |>
-    summary()
-fit_info |>
-    filter(iter == 2500) |>
-    filter(model == "Naive-PINN Model") |>
-    pull(I_test_loss) |>
-    summary()
-losses <- fit_info |>
-    filter(k == "52") |>
-#    filter(tlag == "130") |>
-    filter(city == "London") |>
-#    filter(tlag == "26") |>
-    # normalize losses
-    mutate(ode_loss = ode_loss / max(ode_loss),
-           I_loss = I_loss / max(I_loss),
-           I_test_loss = I_test_loss / max(I_test_loss)) |>
-    pivot_longer(cols = c("I_loss", "I_test_loss", "ode_loss"),
-                 names_to = "loss_type",
-                 values_to = "loss") |>
-    ggplot(aes(x = iter, y = loss, color = run, linetype = loss_type)) +
-    geom_line() +
-    facet_grid(tlag~model, labeller = labeller(model = label_value)) +
-    theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-    theme(legend.position = "bottom") +
-    labs(x = "Epoch",
-         y = "Parameter Value",
-         color = "",
-         linetype = "")
-#save losses fig
-losses
-ggplot2::ggsave("~/resubmission_nn_temp/liverpool_losses.png",
-                losses,
-                width = 6,
-                height = 8,
-                dpi = 600)
 
-#AB test-pred/seasonal param fit plots
-
-
-fig2 <- tf_I_p / fit_info_p2 +
-    plot_layout(widths = c(1), 
-                heights = c(1, 1),
-                ncol = 1, 
-                nrow = 2) +
-    plot_annotation(tag_levels = 'A')
-
-scale_factor <- 3
-ggsave(file.path(save_dir, "pinn_ab_test_pred_seasonal_param_fit.png"),
-       fig2, 
-       width = 2.5 * scale_factor,
-       height = 3 * scale_factor,
-       dpi = 600)
 
 
 #mse by model
@@ -273,11 +215,18 @@ ggsave(file.path(save_dir, "pinn_ab_test_pred_seasonal_param_fit.png"),
 
 save_dir <- "../../../output/tables"
 test_preds |>
-    select(time, k, I_pred, city, I, model, tlag) |>
-    group_by(model, tlag, k) |>
+    filter(k == "52") |>
+    filter(city == "London") |>
+    filter(tlag == "104") |>
+    select(I_pred, I, model, run) |>
+    group_by(model, run) |>
     summarize(mae_I = mean(abs(I_pred - I)),
               cor_I = cor(I_pred, I)) |>
-    rename("Test $MAE(\\hat{I}, I)$" = mae_I,
+    group_by(model) |>
+    summarize(mean_mae_I = round(mean(mae_I), 2),
+              mean_cor_I = round(mean(cor_I), 2)) |>
+    rename("Test $\\widehat{MAE(\\hat{I}, I)}$" = mean_mae_I,
+           "Test $\\widehat{Cor(\\hat{I}, I)}$" = mean_cor_I,
            Model = model) |>
     kable(caption = "MAE by model on test set", 
           format = "latex", 
@@ -285,40 +234,20 @@ test_preds |>
     kable_styling(latex_options = c("hold_position")) |>
     writeLines(file.path(save_dir, "mae_test.txt"))
  
-test_preds
-temp$I
-tsir_in_test <- tsir_preds |>
-    filter(city %in% c("London", "Manchester", "Birmingham", "Liverpool"),
+tsir_summ <- tsir_preds |>
+    filter(city == "London",
            time >= 1961) |>
     mutate(k = as.character(k)) |>
     left_join(test_preds[, c("city", "time_original", "k", "I")], 
               by = c("city" = "city", "time" = "time_original", "k" = "k")) |>
     mutate(I_pred = tsir,
            model = "TSIR Model") |>
-    select(time, k, I_pred, city, I, model)
-
-unique(test_preds$city)
-k_temp <- "52"
-test_mae_temp <- test_preds |>
-    filter(k == k_temp) |>
-    select(time, k, I_pred, city, I, model, tlag) |>
-    group_by(city, tlag, model) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) 
-print(test_mae_temp, n=100)
-test_mae_temp |>
-    write_csv("~/resubmission_nn_temp/pinn_test_mae_cor_by_city_tlag.csv")
-
-temp_tsir <- tsir_in_test |>
-    filter(k == k_temp) |>
-    group_by(model, k, city) |>
+    select(time, k, I_pred, city, I, model) |>
+    filter(k == "52") |>
+    group_by(model) |>
     summarize(mae_I = mean(abs(I_pred - I)),
               cor_I = cor(I_pred, I)) |>
     filter(!is.na(mae_I))
-print(temp_tsir, n=100)
-
-temp_tsir |>
-    write_csv("~/resubmission_nn_temp/tsir_test_mae_cor_by_city_tlag.csv")
 
 test_preds |>
     filter(k == "34") |>

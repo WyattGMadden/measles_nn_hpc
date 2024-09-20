@@ -108,7 +108,7 @@ def main():
     trials_data = [{**{"trial_id": trial.trial_id, "test_mse": trial.last_result["test_mse"], "is_best": trial.trial_id == best_trial.trial_id}, **trial.config} for trial in result.trials]
     df = pd.DataFrame(trials_data)
     df.sort_values("test_mse", inplace=True)
-    save_dir = "../../../output/figures/basic_nn/raytune_hp_optim/"
+    save_dir = "../../../output/data/basic_nn_optimal/raytune_hp_optim/"
     df.to_csv(save_dir + f"raytune_hp_optim_k_{args.k}.csv", index=False)
     print("Results saved to hyperparameter_optimization_results.csv")
     print("Best trial config:", best_trial.config)

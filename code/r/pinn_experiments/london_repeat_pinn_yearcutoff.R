@@ -97,20 +97,24 @@ train_preds <- lapply(grep("_train_predictions", dirs, value = TRUE),
 
 
 
-tf_I_p_all <- test_preds |>
+tf_I_p_all_dat <- test_preds |>
     filter(k == "52",
            tlag == "104") |>
     filter(city == "London") |>
     mutate("Predicted Incidence" = I_pred,
            "Observed Incidence" = I,
-           time = (time - 1) / 26 + 1951) |>
+           time = (time - 1) / 26 + 1951) 
+tf_I_p_all <- tf_I_p_all_dat |>
     ggplot(aes(x = time)) +
-    geom_line(aes(y = `Observed Incidence`, group = run), color = "red") +
-    geom_line(aes(y = `Predicted Incidence`, group = run), color = "black", alpha = 0.1) +
+    geom_line(aes(y = `Observed Incidence`, group = run), color = "black") +
+    geom_line(aes(y = `Predicted Incidence`, group = run), color = "blue3", alpha = 0.05) +
+    geom_line(data = (tf_I_p_all_dat |>
+                group_by(time, model) |>
+                summarize(mean_pred = mean(`Predicted Incidence`))),
+                aes(y = mean_pred), 
+                color = "blue3", 
+                linetype = "dashed") +
     facet_grid(model~., labeller = labeller(model = label_value)) +
-    scale_color_manual(values = c("Observed Incidence" = "black", 
-                                  "Predicted Incidence" = "blue3", 
-                                  "TSIR" = "yellow4")) +
     theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
     theme(legend.position = "bottom") +
     labs(x = "Year",
@@ -119,7 +123,7 @@ tf_I_p_all <- test_preds |>
          linetype = "")
 tf_I_p_all
 ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred_all_runs.png"),
-                tf_I_p,
+                tf_I_p_all,
                 width = 8,
                 height = 6,
                 dpi = 600)

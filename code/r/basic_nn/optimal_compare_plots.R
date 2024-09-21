@@ -6,7 +6,7 @@ save_dir <- "../../../output/figures/"
 read_dir <- "../../../data/"
 
 #all original cases/birth/etc data from max's github
-all_cities <- read_csv("../../../output/data/created/all_cases_from_max_gh.csv")
+all_cities <- read_csv("../../../data/created/all_cases.csv")
 
 
 #tsir data predictions

@@ -154,13 +154,14 @@ ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred.png"),
                 width = 8,
                 height = 6,
                 dpi = 600)
-temp <- fit_info |>
+param_estimates <- fit_info |>
     group_by(iter, model) |>
     summarize(vert = mean(vert),
               amp1 = mean(amp1),
               amp2 = mean(amp2)) |>
     ungroup() |>
     filter(iter == max(iter))
+
 fit_info_p2 <- fit_info |>
     group_by(iter, model) |>
     summarize(vert = mean(vert),
@@ -204,6 +205,19 @@ ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit.png"),
        height = 3 * scale_factor,
        dpi = 600)
 
+fig2_horizontal_layout <- tf_I_p / fit_info_p2 +
+    plot_layout(widths = c(1, 1), 
+                heights = c(1),
+                ncol = 2, 
+                nrow = 1) +
+    plot_annotation(tag_levels = 'A')
+
+scale_factor <- 3
+ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit_horizontal.png"),
+       fig2_horizontal_layout, 
+       height = 2 * scale_factor,
+       width = 3 * scale_factor,
+       dpi = 600)
 
 
 

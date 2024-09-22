@@ -106,13 +106,13 @@ tf_I_p_all_dat <- test_preds |>
            time = (time - 1) / 26 + 1951) 
 tf_I_p_all <- tf_I_p_all_dat |>
     ggplot(aes(x = time)) +
-    geom_line(aes(y = `Observed Incidence`, group = run), color = "black") +
-    geom_line(aes(y = `Predicted Incidence`, group = run), color = "blue3", alpha = 0.05) +
+    geom_line(aes(y = `Observed Incidence`, group = run), color = "red2") +
+    geom_line(aes(y = `Predicted Incidence`, group = run), color = "black", alpha = 0.05) +
     geom_line(data = (tf_I_p_all_dat |>
                 group_by(time, model) |>
-                summarize(mean_pred = mean(`Predicted Incidence`))),
-                aes(y = mean_pred), 
-                color = "blue3", 
+                summarize(median_pred = median(`Predicted Incidence`))),
+                aes(y = median_pred), 
+                color = "black", 
                 linetype = "dashed") +
     facet_grid(model~., labeller = labeller(model = label_value)) +
     theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
@@ -129,14 +129,15 @@ ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred_all_runs.png"),
                 dpi = 600)
 
 tf_I_p <- test_preds |>
-    filter(run == min(run)) |>
+    group_by(time_original, model) |>
+    summarize(I_pred = mean(I_pred),
+              I = unique(I)) |>
     pivot_longer(cols = c("I_pred", "I"),
                  names_to = "pred_actual",
                  values_to = "I") |>
-    mutate(time = (time - 1) / 26 + 1951,
-           pred_actual = case_when(pred_actual == "I_pred" ~ "Predicted Incidence", 
+    mutate(pred_actual = case_when(pred_actual == "I_pred" ~ "Predicted Incidence", 
                                    pred_actual == "I" ~ "Observed Incidence")) |>
-    ggplot(aes(x = time, y = I, color = pred_actual, linetype = pred_actual)) +
+    ggplot(aes(x = time_original, y = I, color = pred_actual, linetype = pred_actual)) +
     geom_line() +
     facet_wrap(~model, labeller = labeller(model = label_value), ncol = 1) +
     scale_color_manual(values = c("Observed Incidence" = "black", 
@@ -148,15 +149,23 @@ tf_I_p <- test_preds |>
          y = "Incidence",
          color = "",
          linetype = "")
-tf_I_p
 ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred.png"),
                 tf_I_p,
                 width = 8,
                 height = 6,
                 dpi = 600)
-
+temp <- fit_info |>
+    group_by(iter, model) |>
+    summarize(vert = mean(vert),
+              amp1 = mean(amp1),
+              amp2 = mean(amp2)) |>
+    ungroup() |>
+    filter(iter == max(iter))
 fit_info_p2 <- fit_info |>
-    filter(run == min(run)) |>
+    group_by(iter, model) |>
+    summarize(vert = mean(vert),
+              amp1 = mean(amp1),
+              amp2 = mean(amp2)) |>
     pivot_longer(cols = c("vert", "amp1", "amp2"),
                  names_to = "param",
                  values_to = "value") |>
@@ -189,11 +198,14 @@ fig2 <- tf_I_p / fit_info_p2 +
     plot_annotation(tag_levels = 'A')
 
 scale_factor <- 3
-ggsave(file.path(save_dir, "pinn_ab_test_pred_seasonal_param_fit.png"),
+ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit.png"),
        fig2, 
        width = 2.5 * scale_factor,
        height = 3 * scale_factor,
        dpi = 600)
+
+
+
 
 run_losses <- fit_info |>
     filter(k == "52") |>
@@ -217,26 +229,25 @@ run_losses <- fit_info |>
 #output as latex table
 #write to txt file
 
-save_dir <- "../../../output/tables"
+save_dir <- "../../../output/tables/"
 test_preds |>
     filter(k == "52") |>
     filter(city == "London") |>
     filter(tlag == "104") |>
-    select(I_pred, I, model, run) |>
-    group_by(model, run) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) |>
+    group_by(time, model) |>
+    summarize(mean_pred = mean(I_pred),
+              I = unique(I)) |>
     group_by(model) |>
-    summarize(mean_mae_I = round(mean(mae_I), 2),
-              mean_cor_I = round(mean(cor_I), 2)) |>
-    rename("Test $\\widehat{MAE(\\hat{I}, I)}$" = mean_mae_I,
-           "Test $\\widehat{Cor(\\hat{I}, I)}$" = mean_cor_I,
+    summarize(mae_I = mean(abs(mean_pred - I)),
+              cor_I = cor(mean_pred, I)) |>
+    rename("Test $\\widehat{MAE(\\hat{I}, I)}$" = mae_I,
+           "Test $\\widehat{Cor(\\hat{I}, I)}$" = cor_I,
            Model = model) |>
     kable(caption = "MAE by model on test set", 
           format = "latex", 
           escape = F) |>
     kable_styling(latex_options = c("hold_position")) |>
-    writeLines(file.path(save_dir, "mae_test.txt"))
+    writeLines(paste0(save_dir, "mae_test.txt"))
  
 tsir_summ <- tsir_preds |>
     filter(city == "London",
@@ -266,26 +277,5 @@ test_preds |>
           format = "latex", 
           escape = F) |>
     kable_styling(latex_options = c("hold_position")) |>
-    writeLines(file.path(save_dir, "mae_test.txt"))
+    writeLines(file.path(paste0, "mae_test.txt"))
     
-tsir_in_test |>
-    filter(k == "52") |>
-    filter(city == "London") |>
-    group_by(model, k, city) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) |>
-    filter(k == "52") |>
-    write_csv("~/resubmission_nn_temp/tsir_test_mae_cor_k52_london.csv")
-
-temp <- test_preds |>
-    group_by(model, run) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) |>
-    group_by(model) |>
-    summarize(mean_mae_I = mean(mae_I),
-              sd_mae_I = sd(mae_I),
-              mean_cor_I = mean(cor_I),
-              sd_cor_I = sd(cor_I))
-temp |>
-    write_csv("~/resubmission_nn_temp/pinn_test_mean_mae_cor_by_model_k52_london.csv")
-

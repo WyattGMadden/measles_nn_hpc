@@ -5,7 +5,7 @@ eval "$(conda shell.bash hook)"
 conda activate finalmlenv
 
 # Directory containing the CSV files with hyperparameters
-hyperparams_dir="../../../output/figures/basic_nn/raytune_hp_optim/"
+hyperparams_dir="../../../output/data/basic_nn_optimal/raytune_hp_optim/"
 
 # Get the directory where the Bash script is running from
 script_dir=$(pwd)

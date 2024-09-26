@@ -15,3 +15,14 @@ __pycache__/
 *.log
 !/.gitignore
 
+# Exclude the renv library folder
+renv/library/
+
+# Exclude the renv cache folder
+renv/cache/
+
+# Exclude the renv staging folder
+renv/staging/
+
+# Exclude temporary files
+renv/sandbox/

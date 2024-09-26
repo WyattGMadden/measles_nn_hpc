@@ -1,14 +1,43 @@
-# Neural networks for endemic measles dynamics: comparative analysis and integration with mechanistic models
+# Deep-learning neural networks for endemic measles dynamics: comparative analysis and integration with mechanistic models
 
-This repo contains code to reproduce all results referenced in paper. 
+This repo contains instructions to reproduce all figures and tables referenced in paper. 
 
-Run makefile to fit models and produce all figures and tables. 
+## Prerequisites
+
+- [Anaconda or Miniconda](https://docs.conda.io/en/latest/miniconda.html) installed
+- [R](https://www.r-project.org/) installed (if not managed via Conda)
+
+## Installation Instructions
+
+### **1. Clone the Repository**
+
+```bash
+git clone https://github.com/yourusername/yourrepository.git
+cd yourrepository
+```
+### **2. Set Up Conda python Environment
+
+```bash
+# Create the Conda environment from the environment.yml file
+conda env create -f environment.yml
+
+# Activate the Conda environment
+conda activate finalmlenv
+```
+### **2. Set up renv R environment
+
+```bash
+Rscript -e "install.packages('renv')"
+Rscript -e "renv::restore()"
+```
+
+
+## Run Makefile to Generate Figures and Tables
+
+```bash
+make all
+```
 
 Figures and tables will be created in 'output/figures/' and 'output/tables/' directories respectively. 
 
 
-dependencies: 
-
-    - python=3.9.12
-
-    - r-base=4.3.1

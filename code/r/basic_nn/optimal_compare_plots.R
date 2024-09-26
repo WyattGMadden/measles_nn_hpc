@@ -49,7 +49,7 @@ prmse <- full_dat %>%
     geom_point(aes(x = tsir_rmse, y = nn_rmse, colour = log(min_pop)), 
                size = 0.1) +
     geom_abline(color = "black") + 
-    cividis::scale_color_cividis(direction = -1) +
+    scale_color_gradient(low = "#002A66", high = "#FBE045") +
     facet_wrap(~ k, ncol = 3) +
     labs(x = expression(RMSE[TSIR]),
          y = expression(RMSE[SFNN]),
@@ -86,7 +86,6 @@ prmsegain <- full_dat %>%
                colour = "transparent") +
     geom_smooth(colour = "blue3", linewidth = 0.5) +
     geom_abline(color = "black") + 
-    cividis::scale_color_cividis(direction = -1) +
     facet_wrap(~ k, ncol = 3) +
     labs(x = "Log(Population)",
          y = expression(RMSE[TSIR] - RMSE[SFNN])) +

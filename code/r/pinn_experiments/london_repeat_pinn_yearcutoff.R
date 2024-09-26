@@ -96,38 +96,6 @@ train_preds <- lapply(grep("_train_predictions", dirs, value = TRUE),
                           labels = c("Naive-PINN Model", "TSIR-PINN Model")))
 
 
-
-tf_I_p_all_dat <- test_preds |>
-    filter(k == "52",
-           tlag == "104") |>
-    filter(city == "London") |>
-    mutate("Predicted Incidence" = I_pred,
-           "Observed Incidence" = I,
-           time = (time - 1) / 26 + 1951) 
-tf_I_p_all <- tf_I_p_all_dat |>
-    ggplot(aes(x = time)) +
-    geom_line(aes(y = `Observed Incidence`, group = run), color = "red2") +
-    geom_line(aes(y = `Predicted Incidence`, group = run), color = "black", alpha = 0.05) +
-    geom_line(data = (tf_I_p_all_dat |>
-                group_by(time, model) |>
-                summarize(median_pred = median(`Predicted Incidence`))),
-                aes(y = median_pred), 
-                color = "black", 
-                linetype = "dashed") +
-    facet_grid(model~., labeller = labeller(model = label_value)) +
-    theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-    theme(legend.position = "bottom") +
-    labs(x = "Year",
-         y = "Incidence",
-         color = "",
-         linetype = "")
-tf_I_p_all
-ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred_all_runs.png"),
-                tf_I_p_all,
-                width = 8,
-                height = 6,
-                dpi = 600)
-
 tf_I_p <- test_preds |>
     group_by(time_original, model) |>
     summarize(I_pred = mean(I_pred),
@@ -154,13 +122,6 @@ ggplot2::ggsave(paste0(save_dir, "pinn_ab_test_pred.png"),
                 width = 8,
                 height = 6,
                 dpi = 600)
-param_estimates <- fit_info |>
-    group_by(iter, model) |>
-    summarize(vert = mean(vert),
-              amp1 = mean(amp1),
-              amp2 = mean(amp2)) |>
-    ungroup() |>
-    filter(iter == max(iter))
 
 fit_info_p2 <- fit_info |>
     group_by(iter, model) |>
@@ -191,19 +152,6 @@ fit_info_p2 <- fit_info |>
          y = "Parameter Value",
          color = "",
          linetype = "")
-fig2 <- tf_I_p / fit_info_p2 +
-    plot_layout(widths = c(1), 
-                heights = c(1, 1),
-                ncol = 1, 
-                nrow = 2) +
-    plot_annotation(tag_levels = 'A')
-
-scale_factor <- 3
-ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit.png"),
-       fig2, 
-       width = 2.5 * scale_factor,
-       height = 3 * scale_factor,
-       dpi = 600)
 
 fig2_horizontal_layout <- tf_I_p / fit_info_p2 +
     plot_layout(widths = c(1, 1), 
@@ -213,29 +161,11 @@ fig2_horizontal_layout <- tf_I_p / fit_info_p2 +
     plot_annotation(tag_levels = 'A')
 
 scale_factor <- 3
-ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit_horizontal.png"),
+ggsave(paste0(save_dir, "pinn_ab_test_pred_param_fit.png"),
        fig2_horizontal_layout, 
        height = 2 * scale_factor,
        width = 3 * scale_factor,
        dpi = 600)
-
-
-
-run_losses <- fit_info |>
-    filter(k == "52") |>
-#    filter(tlag == "130") |>
-    filter(city == "London") |>
-#    filter(tlag == "26") |>
-    # normalize losses
-    ggplot(aes(x = iter, y = I_test_loss, color = run)) +
-    geom_line() +
-    facet_grid(tlag~model, labeller = labeller(model = label_value)) +
-    geom_hline(aes(yintercept = 457), linetype = "dashed") +
-    theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
-    theme(legend.position = "bottom") +
-    labs(x = "Epoch",
-         y = "Test I MAE",
-         color = "Run")
 
 
 
@@ -263,33 +193,3 @@ test_preds |>
     kable_styling(latex_options = c("hold_position")) |>
     writeLines(paste0(save_dir, "mae_test.txt"))
  
-tsir_summ <- tsir_preds |>
-    filter(city == "London",
-           time >= 1961) |>
-    mutate(k = as.character(k)) |>
-    left_join(test_preds[, c("city", "time_original", "k", "I")], 
-              by = c("city" = "city", "time" = "time_original", "k" = "k")) |>
-    mutate(I_pred = tsir,
-           model = "TSIR Model") |>
-    select(time, k, I_pred, city, I, model) |>
-    filter(k == "52") |>
-    group_by(model) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) |>
-    filter(!is.na(mae_I))
-
-test_preds |>
-    filter(k == "34") |>
-    select(time, k, I_pred, city, I, model) |>
-    rbind(tsir_in_test) |>
-    group_by(model) |>
-    summarize(mae_I = mean(abs(I_pred - I)),
-              cor_I = cor(I_pred, I)) |>
-    rename("Test $MAE(\\hat{I}, I)$" = mae_I,
-           Model = model) |>
-    kable(caption = "MAE by model on test set", 
-          format = "latex", 
-          escape = F) |>
-    kable_styling(latex_options = c("hold_position")) |>
-    writeLines(file.path(paste0, "mae_test.txt"))
-    

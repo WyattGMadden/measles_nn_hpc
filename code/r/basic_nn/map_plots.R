@@ -24,25 +24,25 @@ uk_map <- ne_countries(scale = "medium",
 
 eng_wales_map <- uk_map[uk_map$admin %in% c("England", "Wales"), ]
 
-first_biweek_1960 <- round(min(abs(full_dat$time - 1961)) + 1961, 2)
+first_biweek_1960 <- round(min(abs(all_cities$time - 1961)) + 1961, 2)
 
-spat_plot_dat <- full_dat |>
+spat_plot_dat <- all_cities |>
     mutate(time = round(time, 2)) %>%
-    filter(k == 52, 
-           round(time, 2) == first_biweek_1960)
+    filter(round(time, 2) == first_biweek_1960)
 
 ewplot <- ggplot(data = uk_map) +
   geom_sf(fill = "white", color = "black") +
   geom_point(data = spat_plot_dat, 
              aes(x = long, 
                  y = lat,
-                 color = log(cases)), 
+                 color = log(cases + 1)), 
              size = 1, alpha = 1) +
-  cividis::scale_color_cividis() +
+  scale_color_gradient(low = "#002A66", high = "#FBE045") +
+                       #, breaks = seq(2, 6, 2)) +
   lims(x = c(-6, 2), y = c(50, 56)) +
   labs(x = "Longitude",
        y = "Latitude",
-       color = "Log(Incidence)") + 
+       color = "Log(Incidence + 1)   ") + 
   theme(panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
   theme(legend.position = "bottom",
         legend.text = element_text(size = 10))
@@ -83,7 +83,7 @@ fig1 <- ewplot / timeplot +
     plot_annotation(tag_levels = 'A')
 
 scale_factor <- 3
-ggsave(paste0(save_dir, "fig1data_spat_temp.png"),
+ggsave(paste0(save_dir, "fig5_spat_temp.png"),
        fig1, 
        width = 3 * scale_factor,
        height = 1.5 * scale_factor,

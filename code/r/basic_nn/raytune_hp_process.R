@@ -31,5 +31,5 @@ final_small <- final_small[order(final_small$k),]
 final_small$weight_decay <- round(final_small$weight_decay, 4)
 
 # Write the final data frame to a CSV file
-write.csv(final_small, file = "../../../output/data/basic_nn_optimal/raytune_hp_optim_all.csv", row.names = FALSE)
+write.csv(final_small, file = "../../../output/tables/raytune_hp_optim_all.csv", row.names = FALSE)
 

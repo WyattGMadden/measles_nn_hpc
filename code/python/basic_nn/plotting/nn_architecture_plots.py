@@ -66,5 +66,5 @@ add_edges(hidden2_nodes, hidden3_nodes)
 add_edges(hidden3_nodes, output_nodes)
 
 # Save the diagram to a file
-graph.write_png('../../../../output/figures/basic_nn_optimal/feedforward_network_structure.png')
+graph.write_png('../../../../output/figures/feedforward_network_structure.png')
 

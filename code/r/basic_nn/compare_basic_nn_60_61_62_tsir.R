@@ -79,4 +79,4 @@ prmse <- full_dat_60 %>%
     summarize(tsir_rmse = round(mean(tsir_rmse, na.rm = T), 4),
               nn_rmse = round(mean(nn_rmse, na.rm = T), 4))
 
-write_csv(prmse, "../../../output/data/basic_nn_optimal/test_train_cutoff_basic_tsir_rmse.csv")
+write_csv(prmse, "../../../output/tables/test_train_cutoff_basic_tsir_rmse.csv")

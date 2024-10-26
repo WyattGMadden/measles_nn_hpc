@@ -1,4 +1,4 @@
-# Define phony targets for clarity
+# Define phony targets for clearness
 .PHONY: all createfig1 createfig2 createfig3 createfig4 createfig5
 
 # Default target
